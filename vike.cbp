@@ -7,8 +7,8 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="default">
-				<Option output="../../devel/share/CodeBlocks/plugins/vike.dll" prefix_auto="0" extension_auto="0" />
-				<Option object_output="../../.objs/plugins/contrib/vike" />
+				<Option output="./build/bin/vike.dll" prefix_auto="0" extension_auto="0" />
+				<Option object_output="./build/vike" />
 				<Option type="3" />
 				<Option compiler="gcc" />
 				<Option parameters="--debug-log -na -ns -nd" />
@@ -42,8 +42,8 @@
 			<Add alias="All" targets="default;" />
 		</VirtualTargets>
 		<Compiler>
-			<Add directory="../../include" />
-			<Add directory="../../sdk/wxscintilla/include" />
+			<Add directory="E:/CodeBlocks/codeblocks-head/trunk/src/include" />
+			<Add directory="E:/CodeBlocks/codeblocks-head/trunk/src/sdk/wxscintilla/include" />
 			<Add directory="$(#WX.include)" />
 			<Add directory="$(#WX.lib)/gcc_dll$(WX_CFG)/msw$(WX_SUFFIX)" />
 			<Add directory="$(#WX)/contrib/include" />
@@ -52,13 +52,12 @@
 			<Add library="wxmsw28u_gcc_cb" />
 			<Add library="wxscintilla_cb" />
 			<Add library="codeblocks" />
-			<Add directory="D:/Prog/CodeBlocks_bak" />
 			<Add directory="$(#WX.lib)/gcc_dll$(WX_CFG)" />
-			<Add directory="../../devel" />
+			<Add directory="E:/CodeBlocks/codeblocks-head/trunk/src/devel" />
 		</Linker>
 		<ExtraCommands>
-			<Add after="zip -j9 ..\..\devel\share\CodeBlocks\vike.zip manifest.xml" />
-			<Add after="zip -j9 vike.cbplugin ..\..\devel\share\CodeBlocks\plugins\vike.dll ..\..\devel\share\CodeBlocks\vike.zip" />
+			<Add after="zip -j9 .\build\bin\vike.zip manifest.xml" />
+			<Add after="zip -j9 .\build\vike.cbplugin .\build\bin\vike.dll .\build\bin\vike.zip" />
 			<Mode after="always" />
 		</ExtraCommands>
 		<Unit filename="cbvike.cpp" />
