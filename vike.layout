@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_layout_file>
+	<ActiveTarget name="All" />
+	<File name="vike.cpp" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="3299" topLine="71" />
+		</Cursor>
+	</File>
+	<File name="vike.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="856" topLine="29" />
+		</Cursor>
+	</File>
+	<File name="cbvike.cpp" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="10126" topLine="34" />
+		</Cursor>
+	</File>
+	<File name="cbvike.h" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="763" topLine="9" />
+		</Cursor>
+	</File>
+	<File name="debugging.h" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="465" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="manifest.xml" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="255" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="vifunc.cpp" open="1" top="1" tabpos="7" split="0" active="1" splitpos="598" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="15558" topLine="499" />
+		</Cursor>
+	</File>
+	<File name="vifunc.h" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="6412" topLine="196" />
+		</Cursor>
+	</File>
+</CodeBlocks_layout_file>

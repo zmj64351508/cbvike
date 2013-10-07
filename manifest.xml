@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_plugin_manifest_file>
+    <SdkVersion major="1" minor="11" release="0" />
+    <Plugin name="cbVike">
+        <Value title="Keyboard shortcuts like vi" />
+        <Value version="0.9.1 2011/12/28" />
+        <Value description="Code::Blocks vike" />
+        <Value author="Jia Wei" />
+        <Value authorEmail="ayheos@gmail.com" />
+        <Value authorWebsite="" />
+        <Value thanksTo="Thanks to...
+            Pecan Heber's keybinder plugin
+            The Code::Blocks team" />
+        <Value license="GPL" />
+    </Plugin>
+</CodeBlocks_plugin_manifest_file>
