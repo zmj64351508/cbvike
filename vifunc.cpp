@@ -1,12 +1,3 @@
-/////////////////////////////////////////////////////////////////////////////
-// Name:        vifunc.cpp
-// Purpose:     process keyevent like vim
-// Author:      Jia Wei
-// Created:     2011/12/17
-// Copyright:   (c) Jia Wei
-// Licence:     wxWidgets licence
-/////////////////////////////////////////////////////////////////////////////
-
 #ifdef __GNUG__
 #pragma implementation "vifunc.h"
 #endif

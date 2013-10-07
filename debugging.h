@@ -1,12 +1,3 @@
-/////////////////////////////////////////////////////////////////////////////
-// Name:        debugging.h
-// Purpose:     enable/disable debugging
-// Author:      Jia Wei
-// Created:     2011/12/17
-// Copyright:   (c) Jia Wei
-// Licence:     wxWidgets licence
-/////////////////////////////////////////////////////////////////////////////
-
 #ifndef __DEBUGGING_H__
 #define __DEBUGGING_H__
 
