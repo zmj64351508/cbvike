@@ -15,6 +15,7 @@ Movement
 	w, b
 	gg, (num)G, 0
 	^, $
+	f,F
 
 Insert
 
@@ -23,14 +24,14 @@ Insert
 Editing
 
 	r(work properly with ASCII)
-	cw, cc, c$ 
+	(num)cw, (num)cc, c$ 
 	u, Ctrl-r
 
 Cut and paste
 
 	x
-	yw, yy, y$ 
-	dw, (num)dd, d$
+	(num)yw, (num)yy, y$ 
+	(num)dw, (num)dd, d$
 	p, P 
 
 
