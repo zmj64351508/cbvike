@@ -49,7 +49,7 @@ class wxBinderEvtHandler : public wxEvtHandler
     virtual ~wxBinderEvtHandler()
     {
         if ( m_pTarget ) m_pTarget->RemoveEventHandler(this);
-        delete m_pVike;
+        if ( m_pVike ) delete m_pVike;
     }
 
 

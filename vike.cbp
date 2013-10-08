@@ -42,18 +42,18 @@
 			<Add alias="All" targets="default;" />
 		</VirtualTargets>
 		<Compiler>
-			<Add directory="E:/CodeBlocks/codeblocks-head/trunk/src/include" />
-			<Add directory="E:/CodeBlocks/codeblocks-head/trunk/src/sdk/wxscintilla/include" />
-			<Add directory="$(#WX.include)" />
+			<Add directory="$(#CB_PATH)/src/sdk/wxscintilla/include" />
+			<Add directory="$(#CB_PATH)/src/include" />
 			<Add directory="$(#WX.lib)/gcc_dll$(WX_CFG)/msw$(WX_SUFFIX)" />
 			<Add directory="$(#WX)/contrib/include" />
+			<Add directory="$(#WX.include)" />
 		</Compiler>
 		<Linker>
 			<Add library="wxmsw28u_gcc_cb" />
 			<Add library="wxscintilla_cb" />
 			<Add library="codeblocks" />
 			<Add directory="$(#WX.lib)/gcc_dll$(WX_CFG)" />
-			<Add directory="E:/CodeBlocks/codeblocks-head/trunk/src/devel" />
+			<Add directory="$(#CB_PATH)/src/devel" />
 		</Linker>
 		<ExtraCommands>
 			<Add after="zip -j9 .\build\bin\vike.zip manifest.xml" />
