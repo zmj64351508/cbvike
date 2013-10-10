@@ -12,7 +12,7 @@ class VikeWin;
 typedef void (ViFunc::*vFunc)(VikeWin *, wxScintilla*);
 
 #define MAKE_PAIRS(mode,ekey,lastkeycode,keycode,value) do{ \
-        unsigned long key = calcKey(mode,ekey,lastkeycode,keycode); \
+        unsigned long int key = calcKey(mode,ekey,lastkeycode,keycode); \
         pairs[key] = value; \
     }while(0)
 
@@ -133,91 +133,12 @@ class ViFunc
         // cut line or cut word
         int LineCuted;
 
-        char ShiftKeyTable[0xFF] = {
-            0,  // NUL
-            1,  // SOH
-            2,  // STX
-            3,  // ETX
-            4,  // EOT
-            5,  // ENQ
-            6,  // ACK
-            7,  // BEL
-            8,  // BS
-            9,  // HT
-            10, // LF
-            11, // VT
-            12, // FF
-            13, // CR
-            14, // SO
-            15, // SI
-            16, // DLE
-            17, // DC1
-            18, // DC2
-            19, // DC3
-            20, // DC4
-            21, // NAK
-            22, // SYN
-            23, // TB
-            24, // CAN
-            25, // EM
-            26, // SUB
-            27, // ESC
-            28, // FS
-            29, // GS
-            30, // RS
-            31, // US
-            ' ', // 32
-            '!', // 33
-            '"', // 34
-            '#', // 35
-            '$', // 36
-            '%', // 37
-            '&', // 38
-            '"', // 39 ' -> "
-            '(', // 40
-            ')', // 41
-            '*', // 42
-            '+', // 43
-            '<', // 44 , -> <
-            '_', // 45 - -> _
-            '>', // 46 . -> >
-            '?', // 47 / -> ?
-            ')', // 48 0 -> )
-            '!', // 49 1 -> !
-            '@', // 50 2 -> @
-            '#', // 51 3 -> #
-            '$', // 52 4 -> $
-            '%', // 53 5 -> %
-            '^', // 54 6 -> ^
-            '&', // 55 7 -> &
-            '*', // 56 8 -> *
-            '(', // 57 9 -> (
-            ':', // 58
-            ':', // 59 ; -> :
-            '<', // 60
-            '+', // 61 = -> +
-            '>', // 62
-            '?', // 63
-            '@', // 64
-            'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-            '{', // 91 [ -> {
-            '|', // 92 \ -> |
-            '}', // 93 ] -> }
-            '^', // 94
-            '_', // 95
-            '~', // 96 ` -> ~
-            'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-            '{', // 123
-            '|', // 124
-            '}', // 125
-            '~', // 126
-            127, // DEL
-        };
+        static const char ShiftKeyTable[128];
 
         //store keycode maps
         LongHashMap pairs;
 
-        unsigned long calcKey(
+        unsigned long int calcKey(
                 eMODE mode, //vim normal/insert/visual mode
                 int ekey, //if shift/ctrl/alt keycodes have pressed
                 unsigned char lastkeycode, //record last keycode pressed, like gg(go document home)

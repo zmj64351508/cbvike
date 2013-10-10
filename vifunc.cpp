@@ -26,6 +26,87 @@
 #include "vifunc.h"
 #include "debugging.h"
 
+const char ViFunc::ShiftKeyTable[128] = {
+    0,  // NUL
+    1,  // SOH
+    2,  // STX
+    3,  // ETX
+    4,  // EOT
+    5,  // ENQ
+    6,  // ACK
+    7,  // BEL
+    8,  // BS
+    9,  // HT
+    10, // LF
+    11, // VT
+    12, // FF
+    13, // CR
+    14, // SO
+    15, // SI
+    16, // DLE
+    17, // DC1
+    18, // DC2
+    19, // DC3
+    20, // DC4
+    21, // NAK
+    22, // SYN
+    23, // TB
+    24, // CAN
+    25, // EM
+    26, // SUB
+    27, // ESC
+    28, // FS
+    29, // GS
+    30, // RS
+    31, // US
+    ' ', // 32
+    '!', // 33
+    '"', // 34
+    '#', // 35
+    '$', // 36
+    '%', // 37
+    '&', // 38
+    '"', // 39 ' -> "
+    '(', // 40
+    ')', // 41
+    '*', // 42
+    '+', // 43
+    '<', // 44 , -> <
+    '_', // 45 - -> _
+    '>', // 46 . -> >
+    '?', // 47 / -> ?
+    ')', // 48 0 -> )
+    '!', // 49 1 -> !
+    '@', // 50 2 -> @
+    '#', // 51 3 -> #
+    '$', // 52 4 -> $
+    '%', // 53 5 -> %
+    '^', // 54 6 -> ^
+    '&', // 55 7 -> &
+    '*', // 56 8 -> *
+    '(', // 57 9 -> (
+    ':', // 58
+    ':', // 59 ; -> :
+    '<', // 60
+    '+', // 61 = -> +
+    '>', // 62
+    '?', // 63
+    '@', // 64
+    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+    '{', // 91 [ -> {
+    '|', // 92 \ -> |
+    '}', // 93 ] -> }
+    '^', // 94
+    '_', // 95
+    '~', // 96 ` -> ~
+    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+    '{', // 123
+    '|', // 124
+    '}', // 125
+    '~', // 126
+    127, // DEL
+};
+
 ViFunc ViFunc::gViFunc;
 
 VikeWin::VikeWin()
@@ -619,8 +700,8 @@ void ViFunc::n_r_any(VikeWin *vike, wxScintilla* editor)
 {
     LOGIT(_T("r_any key %c\n"), vike->GetKeyCode());
     editor->CharRightExtend();
-    wxString *replace = new wxString((wxChar)vike->curChar);
-    editor->ReplaceSelection(*replace);
+    wxString replace((wxChar)vike->curChar);
+    editor->ReplaceSelection(replace);
     editor->CharLeft();
     delete replace;
 
@@ -633,7 +714,7 @@ void ViFunc::n_f(VikeWin *vike, wxScintilla* editor)
 void ViFunc::n_f_any(VikeWin *vike, wxScintilla* editor)
 {
     LOGIT(_T("f_any key %c\n"), vike->curChar);
-    wxString *toFind = new wxString((wxChar)vike->curChar);
+    wxString toFind((wxChar)vike->curChar);
 
     int curPos = editor->GetCurrentPos() + 1;
     int endPos = editor->GetLineEndPosition(editor->GetCurrentLine());
@@ -642,7 +723,7 @@ void ViFunc::n_f_any(VikeWin *vike, wxScintilla* editor)
     if(curPos >= endPos){
         goto out;
     }
-    findPos = editor->FindText(curPos, endPos, *toFind, wxSCI_FIND_MATCHCASE, &lengthFound);
+    findPos = editor->FindText(curPos, endPos, toFind, wxSCI_FIND_MATCHCASE, &lengthFound);
     if(findPos > 0){
         editor->GotoPos(findPos);
     }
