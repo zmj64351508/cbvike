@@ -118,8 +118,7 @@ VikeWin::VikeWin()
     keyCode = 0;
     keyCodes = 0;
     Number = 0;
-    CapsLock = wxGetKeyState(WXK_CAPITAL);
-    curChar=0;
+    Char=0;
 
     func = ViFunc::Instance();
 }
@@ -130,6 +129,7 @@ VikeWin::VikeWin()
 ViFunc::ViFunc()
 {
     LineCuted = 0;
+    CapsLock = wxGetKeyState(WXK_CAPITAL);
 
     /************* Insert Mode ***************/
     MAKE_PAIRS(INSERT,NONE,0,27,&ViFunc::i_esc);//esc
@@ -152,10 +152,10 @@ ViFunc::ViFunc()
     MAKE_PAIRS(NORMAL,NONE,0,WXK_DELETE,&ViFunc::n_delete);//delete
 
     /* move */
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('h'),&ViFunc::n_h);//h
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('l'),&ViFunc::n_l);//l
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('j'),&ViFunc::n_j);//j
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('k'),&ViFunc::n_k);//k
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('h'),&ViFunc::n_h);//h
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('l'),&ViFunc::n_l);//l
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('j'),&ViFunc::n_j);//j
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('k'),&ViFunc::n_k);//k
     MAKE_PAIRS(NORMAL,NONE,0,WXK_LEFT,&ViFunc::n_h);//left
     MAKE_PAIRS(NORMAL,NONE,0,WXK_RIGHT,&ViFunc::n_l);//right
     MAKE_PAIRS(NORMAL,NONE,0,WXK_DOWN,&ViFunc::n_j);//down
@@ -166,101 +166,101 @@ ViFunc::ViFunc()
     /* line move */
     MAKE_PAIRS(NORMAL,SHIFT,0,'6',&ViFunc::n_sf_6); //^
     MAKE_PAIRS(NORMAL,SHIFT,0,'4',&ViFunc::n_sf_4); //$
-    MAKE_PAIRS(NORMAL,SHIFT,0,UPPER_CODE('g'),&ViFunc::n_G); //G
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('g'),&ViFunc::n_g); //g
-    MAKE_PAIRS(NORMAL,NONE,UPPER_CODE('g'),UPPER_CODE('g'),&ViFunc::n_gg); //gg
+    MAKE_PAIRS(NORMAL,SHIFT,0,MAKE_ORIGIN_CODE('g'),&ViFunc::n_G); //G
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('g'),&ViFunc::n_g); //g
+    MAKE_PAIRS(NORMAL,NONE,MAKE_ORIGIN_CODE('g'),MAKE_ORIGIN_CODE('g'),&ViFunc::n_gg); //gg
 
     /* insert and append */
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('i'),&ViFunc::n_i);//i
-    MAKE_PAIRS(NORMAL,SHIFT,0,UPPER_CODE('i'),&ViFunc::n_I);//I
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('a'),&ViFunc::n_a); //a
-    MAKE_PAIRS(NORMAL,SHIFT,0,UPPER_CODE('a'),&ViFunc::n_A); //A
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('i'),&ViFunc::n_i);//i
+    MAKE_PAIRS(NORMAL,SHIFT,0,MAKE_ORIGIN_CODE('i'),&ViFunc::n_I);//I
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('a'),&ViFunc::n_a); //a
+    MAKE_PAIRS(NORMAL,SHIFT,0,MAKE_ORIGIN_CODE('a'),&ViFunc::n_A); //A
 
 
-    MAKE_PAIRS(NORMAL,CTRL,0,UPPER_CODE('f'),&ViFunc::n_ctrl_f); //ctrl-f
-    MAKE_PAIRS(NORMAL,CTRL,0,UPPER_CODE('b'),&ViFunc::n_ctrl_b); //ctrl-b
+    MAKE_PAIRS(NORMAL,CTRL,0,MAKE_ORIGIN_CODE('f'),&ViFunc::n_ctrl_f); //ctrl-f
+    MAKE_PAIRS(NORMAL,CTRL,0,MAKE_ORIGIN_CODE('b'),&ViFunc::n_ctrl_b); //ctrl-b
 
     /* new line */
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('o'),&ViFunc::n_o); //o
-    MAKE_PAIRS(NORMAL,SHIFT,0,UPPER_CODE('o'),&ViFunc::n_O); //O
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('o'),&ViFunc::n_o); //o
+    MAKE_PAIRS(NORMAL,SHIFT,0,MAKE_ORIGIN_CODE('o'),&ViFunc::n_O); //O
 
     /* next and previous word */
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('w'),&ViFunc::n_w); //w
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('b'),&ViFunc::n_b); //b
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('w'),&ViFunc::n_w); //w
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('b'),&ViFunc::n_b); //b
 
     /* replace */
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('r'),&ViFunc::n_r); //replace first key
-    MAKE_PAIRS(NORMAL,NONE,UPPER_CODE('r'),0,&ViFunc::n_r_any); //replace sencond key
-    MAKE_PAIRS(NORMAL,SHIFT,UPPER_CODE('r'),0,&ViFunc::n_r_any); //replace sencond key
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('r'),&ViFunc::n_r); //replace first key
+    MAKE_PAIRS(NORMAL,NONE,MAKE_ORIGIN_CODE('r'),0,&ViFunc::n_r_any); //replace sencond key
+    MAKE_PAIRS(NORMAL,SHIFT,MAKE_ORIGIN_CODE('r'),0,&ViFunc::n_r_any); //replace sencond key
 
     /* find */
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('f'),&ViFunc::n_f); //find first key
-    MAKE_PAIRS(NORMAL,NONE,UPPER_CODE('f'),0,&ViFunc::n_f_any); //find sencond key
-    MAKE_PAIRS(NORMAL,SHIFT,UPPER_CODE('f'),0,&ViFunc::n_f_any); //find sencond key
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('f'),&ViFunc::n_f); //find first key
+    MAKE_PAIRS(NORMAL,NONE,MAKE_ORIGIN_CODE('f'),0,&ViFunc::n_f_any); //find sencond key
+    MAKE_PAIRS(NORMAL,SHIFT,MAKE_ORIGIN_CODE('f'),0,&ViFunc::n_f_any); //find sencond key
 
-    MAKE_PAIRS(NORMAL,SHIFT,0,UPPER_CODE('f'),&ViFunc::n_F); //FIND first key
+    MAKE_PAIRS(NORMAL,SHIFT,0,MAKE_ORIGIN_CODE('f'),&ViFunc::n_F); //FIND first key
     MAKE_PAIRS(NORMAL,NONE,MAKE_SHIFT_CODE('f'),0,&ViFunc::n_F_any); //FIND sencond key
     MAKE_PAIRS(NORMAL,SHIFT,MAKE_SHIFT_CODE('f'),0,&ViFunc::n_F_any); //FIND sencond key
 
     /* delete */
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('d'),&ViFunc::n_d); //d
-    MAKE_PAIRS(NORMAL,NONE,UPPER_CODE('d'),UPPER_CODE('d'),&ViFunc::n_dd); //dd
-    MAKE_PAIRS(NORMAL,SHIFT,UPPER_CODE('d'),'4',&ViFunc::n_dsf_4); //d$
-    MAKE_PAIRS(NORMAL,NONE,UPPER_CODE('d'),UPPER_CODE('w'),&ViFunc::n_dw); //dw
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('d'),&ViFunc::n_d); //d
+    MAKE_PAIRS(NORMAL,NONE,MAKE_ORIGIN_CODE('d'),MAKE_ORIGIN_CODE('d'),&ViFunc::n_dd); //dd
+    MAKE_PAIRS(NORMAL,SHIFT,MAKE_ORIGIN_CODE('d'),'4',&ViFunc::n_dsf_4); //d$
+    MAKE_PAIRS(NORMAL,NONE,MAKE_ORIGIN_CODE('d'),MAKE_ORIGIN_CODE('w'),&ViFunc::n_dw); //dw
 
     /* change */
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('c'),&ViFunc::n_c); //c
-    MAKE_PAIRS(NORMAL,NONE,UPPER_CODE('c'),UPPER_CODE('4'),&ViFunc::n_csf_4); //c$
-    MAKE_PAIRS(NORMAL,NONE,UPPER_CODE('c'),UPPER_CODE('w'),&ViFunc::n_cw); //cw
-    MAKE_PAIRS(NORMAL,NONE,UPPER_CODE('c'),UPPER_CODE('c'),&ViFunc::n_cc); //cc
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('c'),&ViFunc::n_c); //c
+    MAKE_PAIRS(NORMAL,NONE,MAKE_ORIGIN_CODE('c'),MAKE_ORIGIN_CODE('4'),&ViFunc::n_csf_4); //c$
+    MAKE_PAIRS(NORMAL,NONE,MAKE_ORIGIN_CODE('c'),MAKE_ORIGIN_CODE('w'),&ViFunc::n_cw); //cw
+    MAKE_PAIRS(NORMAL,NONE,MAKE_ORIGIN_CODE('c'),MAKE_ORIGIN_CODE('c'),&ViFunc::n_cc); //cc
 
     /* undo and redo */
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('u'),&ViFunc::n_u); //u
-    MAKE_PAIRS(NORMAL,CTRL,0,UPPER_CODE('r'),&ViFunc::n_ctrl_r); //ctrl-r
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('u'),&ViFunc::n_u); //u
+    MAKE_PAIRS(NORMAL,CTRL,0,MAKE_ORIGIN_CODE('r'),&ViFunc::n_ctrl_r); //ctrl-r
 
     /* cut */
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('x'),&ViFunc::n_x); //x
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('x'),&ViFunc::n_x); //x
     MAKE_PAIRS(NORMAL,SHIFT,0,'5',&ViFunc::n_sf_5); //%
-    MAKE_PAIRS(NORMAL,SHIFT,0,UPPER_CODE('x'),&ViFunc::n_X); //X
+    MAKE_PAIRS(NORMAL,SHIFT,0,MAKE_ORIGIN_CODE('x'),&ViFunc::n_X); //X
 
     /* copy */
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('y'),&ViFunc::n_y); //y
-    MAKE_PAIRS(NORMAL,NONE,UPPER_CODE('y'),UPPER_CODE('y'),&ViFunc::n_yy); //yy
-    MAKE_PAIRS(NORMAL,NONE,UPPER_CODE('y'),UPPER_CODE('w'),&ViFunc::n_yw); //yw
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('y'),&ViFunc::n_y); //y
+    MAKE_PAIRS(NORMAL,NONE,MAKE_ORIGIN_CODE('y'),MAKE_ORIGIN_CODE('y'),&ViFunc::n_yy); //yy
+    MAKE_PAIRS(NORMAL,NONE,MAKE_ORIGIN_CODE('y'),MAKE_ORIGIN_CODE('w'),&ViFunc::n_yw); //yw
 
     /* paste */
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('p'),&ViFunc::n_p); //p
-    MAKE_PAIRS(NORMAL,SHIFT,0,UPPER_CODE('p'),&ViFunc::n_P); //P
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('p'),&ViFunc::n_p); //p
+    MAKE_PAIRS(NORMAL,SHIFT,0,MAKE_ORIGIN_CODE('p'),&ViFunc::n_P); //P
 
     MAKE_PAIRS(NORMAL,SHIFT,0,',',&ViFunc::n_bktab); //<
     MAKE_PAIRS(NORMAL,SHIFT,',',',',&ViFunc::n_bktabbktab); //<<
     MAKE_PAIRS(NORMAL,SHIFT,0,'.',&ViFunc::n_tab); //>
     MAKE_PAIRS(NORMAL,SHIFT,'.','.',&ViFunc::n_tabtab); //>>
     MAKE_PAIRS(NORMAL,NONE,0,'/',&ViFunc::n_search); //search / TODO
-    MAKE_PAIRS(NORMAL,CTRL,0,UPPER_CODE('n'),&ViFunc::n_ctrl_n); //complete code ctrl-n TODO
-    MAKE_PAIRS(NORMAL,CTRL,0,UPPER_CODE('p'),&ViFunc::n_ctrl_p); //complete code ctrl-p TODO
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('m'),&ViFunc::n_m); //m
+    MAKE_PAIRS(NORMAL,CTRL,0,MAKE_ORIGIN_CODE('n'),&ViFunc::n_ctrl_n); //complete code ctrl-n TODO
+    MAKE_PAIRS(NORMAL,CTRL,0,MAKE_ORIGIN_CODE('p'),&ViFunc::n_ctrl_p); //complete code ctrl-p TODO
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('m'),&ViFunc::n_m); //m
 
     MAKE_PAIRS(NORMAL,NONE,0,'~',&ViFunc::n_tom); //`
-    MAKE_PAIRS(NORMAL,NONE,'~',UPPER_CODE('a'),&ViFunc::n_toma); //marker_a
+    MAKE_PAIRS(NORMAL,NONE,'~',MAKE_ORIGIN_CODE('a'),&ViFunc::n_toma); //marker_a
 
-    MAKE_PAIRS(NORMAL,NONE,0,UPPER_CODE('v'),&ViFunc::n_v); //visual mode
+    MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('v'),&ViFunc::n_v); //visual mode
     /************* Visual Mode ***************/
     MAKE_PAIRS(VISUAL,NONE,0,27,&ViFunc::v_esc);//esc
     MAKE_PAIRS(VISUAL,CTRL,0,'[',&ViFunc::v_esc);//ctrl-[ same as esc
-    MAKE_PAIRS(VISUAL,NONE,0,UPPER_CODE('h'),&ViFunc::v_h);//h
-    MAKE_PAIRS(VISUAL,NONE,0,UPPER_CODE('l'),&ViFunc::v_l);//l
-    MAKE_PAIRS(VISUAL,NONE,0,UPPER_CODE('j'),&ViFunc::v_j);//j
-    MAKE_PAIRS(VISUAL,NONE,0,UPPER_CODE('k'),&ViFunc::v_k);//k
-    MAKE_PAIRS(VISUAL,NONE,0,UPPER_CODE('e'),&ViFunc::v_e);//e
-    MAKE_PAIRS(VISUAL,NONE,0,UPPER_CODE('b'),&ViFunc::v_b);//b
+    MAKE_PAIRS(VISUAL,NONE,0,MAKE_ORIGIN_CODE('h'),&ViFunc::v_h);//h
+    MAKE_PAIRS(VISUAL,NONE,0,MAKE_ORIGIN_CODE('l'),&ViFunc::v_l);//l
+    MAKE_PAIRS(VISUAL,NONE,0,MAKE_ORIGIN_CODE('j'),&ViFunc::v_j);//j
+    MAKE_PAIRS(VISUAL,NONE,0,MAKE_ORIGIN_CODE('k'),&ViFunc::v_k);//k
+    MAKE_PAIRS(VISUAL,NONE,0,MAKE_ORIGIN_CODE('e'),&ViFunc::v_e);//e
+    MAKE_PAIRS(VISUAL,NONE,0,MAKE_ORIGIN_CODE('b'),&ViFunc::v_b);//b
     MAKE_PAIRS(VISUAL,SHIFT,0,'4',&ViFunc::v_sf_4);//$
     MAKE_PAIRS(VISUAL,SHIFT,0,'6',&ViFunc::v_sf_6);//^
     MAKE_PAIRS(VISUAL,NONE,0,'0',&ViFunc::v_0);//0
     MAKE_PAIRS(VISUAL,SHIFT,0,',',&ViFunc::v_bktab); //<
     MAKE_PAIRS(VISUAL,SHIFT,0,'.',&ViFunc::v_tab); //>
-    MAKE_PAIRS(VISUAL,NONE,0,UPPER_CODE('y'),&ViFunc::v_y);//y
-    MAKE_PAIRS(VISUAL,NONE,0,UPPER_CODE('d'),&ViFunc::v_d);//d
+    MAKE_PAIRS(VISUAL,NONE,0,MAKE_ORIGIN_CODE('y'),&ViFunc::v_y);//y
+    MAKE_PAIRS(VISUAL,NONE,0,MAKE_ORIGIN_CODE('d'),&ViFunc::v_d);//d
 }
 
 //if return FALSE,not process here,leave next.
@@ -274,26 +274,12 @@ bool ViFunc::execute(VikeWin *curVike, wxKeyEvent &event)
 
     /* CapsLock */
     if(keyCode == 311){
-        curVike->CapsLock = !curVike->CapsLock;
+        CapsLock = !CapsLock;
         return FALSE;
     }
 
     /* Generate fkey */
-    if(event.m_controlDown) {
-        fkey |= CTRL;
-    } else if(event.m_shiftDown) {
-        if(curVike->CapsLock){
-            fkey &= ~SHIFT;
-        }else{
-            fkey |= SHIFT;
-        }
-    } else {
-        if(curVike->CapsLock){
-            fkey |= SHIFT;
-        }else{
-            fkey = NONE;
-        }
-    }
+    fkey = GenerateFunctionalKey(event);
 
     /* Pressing Shift but no other key pressed */
     if(keyCode == WXK_SHIFT && event.m_shiftDown) return TRUE;
@@ -303,38 +289,30 @@ bool ViFunc::execute(VikeWin *curVike, wxKeyEvent &event)
     int lastKey = curVike->GetLastKeyCode();
 
     /* If entered r or f then accept all the next key */
-    if(GET_KEYCODE(lastKey) == 'R' || GET_KEYCODE(lastKey) == 'F' || GET_KEYCODE(lastKey) == 'f'){
+    if(GET_KEYCODE(lastKey) == MAKE_ORIGIN_CODE('r') ||
+       GET_KEYCODE(lastKey) == MAKE_ORIGIN_CODE('f') ||
+       GET_KEYCODE(lastKey) == MAKE_SHIFT_CODE('f'))
+    {
         key = calcKey(curMode,fkey,GET_KEYCODE(lastKey),0);
     }else{
         key = calcKey(curMode,fkey,GET_KEYCODE(lastKey),GET_KEYCODE(keyCode));
     }
 
     /* Generate ASCII charactor by key code and SHIFT */
-    if(fkey & SHIFT){
-        curVike->curChar = ShiftKeyTable[keyCode];
-    }else{
-        if(keyCode >= 'A' && keyCode <= 'Z'){
-            curVike->curChar = keyCode-'A'+'a';
-        }else{
-            curVike->curChar = keyCode;
-        }
-    }
+    curVike->Char = MakeChar(fkey, keyCode);
 
     LOGIT(L"calc key is 0x%x\n", key);
     /* found key operation */
-    if(pairs[key])
-    {
+    if(pairs[key]){
         (this->*(pairs[key]))(curVike, (wxScintilla*)event.GetEventObject());
         return TRUE;
     }
     /* insert mode */
-    else if(curMode == INSERT)
-    {
+    else if(curMode == INSERT){
         return FALSE;
     }
     /* unknow key operation */
-    else
-    {
+    else{
         curVike->Finish();
         return TRUE;
     }
@@ -700,7 +678,7 @@ void ViFunc::n_r_any(VikeWin *vike, wxScintilla* editor)
 {
     LOGIT(_T("r_any key %c\n"), vike->GetKeyCode());
     editor->CharRightExtend();
-    wxString replace((wxChar)vike->curChar);
+    wxString replace((wxChar)vike->Char);
     editor->ReplaceSelection(replace);
     editor->CharLeft();
     delete replace;
@@ -713,8 +691,8 @@ void ViFunc::n_f(VikeWin *vike, wxScintilla* editor)
 }
 void ViFunc::n_f_any(VikeWin *vike, wxScintilla* editor)
 {
-    LOGIT(_T("f_any key %c\n"), vike->curChar);
-    wxString toFind((wxChar)vike->curChar);
+    LOGIT(_T("f_any key %c\n"), vike->Char);
+    wxString toFind((wxChar)vike->Char);
 
     int curPos = editor->GetCurrentPos() + 1;
     int endPos = editor->GetLineEndPosition(editor->GetCurrentLine());
@@ -737,8 +715,8 @@ void ViFunc::n_F(VikeWin *vike, wxScintilla* editor)
 }
 void ViFunc::n_F_any(VikeWin *vike, wxScintilla* editor)
 {
-    LOGIT(_T("F_any key %c\n"), vike->curChar);
-    wxString *toFind = new wxString((wxChar)vike->curChar);
+    LOGIT(_T("F_any key %c\n"), vike->Char);
+    wxString *toFind = new wxString((wxChar)vike->Char);
 
     int curPos = editor->GetCurrentPos();
     int startPos = editor->PositionFromLine(editor->GetCurrentLine());

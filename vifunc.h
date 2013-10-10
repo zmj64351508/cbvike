@@ -18,6 +18,7 @@ typedef void (ViFunc::*vFunc)(VikeWin *, wxScintilla*);
 
 #define UPPER_CODE(code) (code-'a'+'A')
 #define LOWER_CODE(code) (code-'A'+'a')
+#define MAKE_ORIGIN_CODE(code) UPPER_CODE(code)
 #define MAKE_SHIFT_CODE(code) (code)
 #define GET_LINE(code) (code>>8 & 0xffff)
 #define GET_KEYCODE(code) (code & 0xff)
@@ -89,10 +90,8 @@ class VikeWin{
 
         // the executing function
         ViFunc *func;
-        // capslock stat
-        int CapsLock;
         // current input character
-        char curChar;
+        char Char;
         //marker register now set only one (a)
         StringHashMap markers;
 
@@ -132,6 +131,7 @@ class ViFunc
            all the open editors */
         // cut line or cut word
         int LineCuted;
+        bool CapsLock;
 
         static const char ShiftKeyTable[128];
 
@@ -157,6 +157,42 @@ class ViFunc
             }
 
             return ed->GetFilename();
+        }
+
+        char MakeChar(int fkey, int keyCode)
+        {
+            char makechar;
+            if(fkey & SHIFT){
+                makechar = ShiftKeyTable[keyCode];
+            }else{
+                if(keyCode >= 'A' && keyCode <= 'Z'){
+                    makechar = keyCode-'A'+'a';
+                }else{
+                    makechar = keyCode;
+                }
+            }
+            return makechar;
+        }
+
+        int GenerateFunctionalKey(wxKeyEvent &event)
+        {
+            int fkey = NONE;
+            if(event.m_controlDown) {
+                fkey |= CTRL;
+            } else if(event.m_shiftDown) {
+                if(CapsLock){
+                    fkey &= ~SHIFT;
+                }else{
+                    fkey |= SHIFT;
+                }
+            } else {
+                if(CapsLock){
+                    fkey |= SHIFT;
+                }else{
+                    fkey = NONE;
+                }
+            }
+            return fkey;
         }
 
         //insert mode
