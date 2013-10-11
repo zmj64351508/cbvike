@@ -83,11 +83,11 @@ void cbVike::OnAppStartupDone(CodeBlocksEvent& event)
 /*    Connect( wxEVT_CREATE,
         (wxObjectEventFunction) (wxEventFunction)
         (wxCommandEventFunction) &cbVike::OnWindowCreateEvent);
-
+*/
     Connect( wxEVT_DESTROY,
         (wxObjectEventFunction) (wxEventFunction)
         (wxCommandEventFunction) &cbVike::OnWindowDestroyEvent);
-        */
+
 
     event.Skip();
 }//OnAppStartupDone
@@ -153,6 +153,7 @@ void cbVike::OnEditorClose(CodeBlocksEvent& event)
             ed = static_cast<cbEditor*>(eb);
             thisEditor = ed->GetControl();
         }
+        LOGIT(_T("this Editor is %p"), thisEditor);
         //------------------------------------------------------------------
         // This code never executed because ed->GetControl no longer exists
         // See OnWindowDestroyEvent() which gets the window as an event.object
