@@ -31,7 +31,7 @@ Cut and paste
 
 	x
 	(num)yw, (num)yy, y$ 
-	(num)dw, (num)dd, d$
+	(num)dw, (num)dd, d$, D
 	p, P 
 
 

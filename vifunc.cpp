@@ -207,6 +207,7 @@ ViFunc::ViFunc()
     MAKE_PAIRS(NORMAL,NONE,MAKE_ORIGIN_CODE('d'),MAKE_ORIGIN_CODE('d'),&ViFunc::n_dd); //dd
     MAKE_PAIRS(NORMAL,SHIFT,MAKE_ORIGIN_CODE('d'),'4',&ViFunc::n_dsf_4); //d$
     MAKE_PAIRS(NORMAL,NONE,MAKE_ORIGIN_CODE('d'),MAKE_ORIGIN_CODE('w'),&ViFunc::n_dw); //dw
+    MAKE_PAIRS(NORMAL,SHIFT,0,MAKE_ORIGIN_CODE('d'),&ViFunc::n_dsf_4); //D
 
     /* change */
     MAKE_PAIRS(NORMAL,NONE,0,MAKE_ORIGIN_CODE('c'),&ViFunc::n_c); //c
