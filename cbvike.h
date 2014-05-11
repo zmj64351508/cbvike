@@ -1,93 +1,128 @@
-#ifndef __CBVIKE_H__
-#define __CBVIKE_H__
+#ifndef __VIKE_H__
+#define __VIKE_H__
 
-#if defined(__GNUG__)
-	#pragma interface "cbvike.h"
+#ifdef __GNUG__
+#pragma interface "m_pVike.h"
 #endif
 
-#include "cbplugin.h"
-#include "vike.h"
+#include "debugging.h"
+#include "vifunc.h"
 
-#define VERSION "0.9.1 2011/12/17"
+#define BIND_NONE   0
+#define BIND_EVENT  1
 
-class wxWindow;
-class wxLogWindow;
+#define SET_START_CARET 1
 
-// ----------------------------------------------------------------------------
-//  cbVike class declaration
-// ----------------------------------------------------------------------------
-class cbVike : public cbPlugin
+class cbVike: public wxObject
 {
-	public:
-		cbVike();
-		virtual ~cbVike();
+    public:
+        static wxArrayString usableWindows;
 
-        /**virtual**/
-		void BuildMenu(wxMenuBar* menuBar){
-            //delete system editor hotkeys that conflict with vim
-            delAccer(menuBar,_("&Search"),_("Find..."));
-            delAccer(menuBar,_("&Search"),_("Replace..."));
-            delAccer(menuBar,_("&Edit"),_("Bookmarks"),_("Toggle bookmark"));
-        }
-		void BuildModuleMenu(const ModuleType type, wxMenu* menu, const FileTreeData* data = 0){}
-		bool BuildToolBar(wxToolBar* toolBar){return FALSE;}
-        /****/
+    protected:
+        wxArrayPtrVoid m_arrHandlers;
 
-		void OnAttach();
-		void OnRelease(bool appShutDown);
+    public:        // miscellaneous
 
-      #if LOGGING
-        //for logging
-        wxLogWindow* pMyLog;
-      #endif
+        //! The event handler for wxKeyEvents.
+        void OnChar(VikeWin *m_pVike, wxKeyEvent &event);
+        void OnFocus(wxFocusEvent &event);
+        void OnEspecialKey(VikeWin *m_pVike, wxKeyEvent &event);
+
+        //! Attaches this class to the given window.
+        void Attach(wxWindow *p);
+        cbVike() {}
+        virtual ~cbVike() { DetachAll(); }
+
+
+
+        void Detach(wxWindow *p, bool deleteEvtHandler = true);
+
+        //! Detaches this event handler from all the window it's attached to.
+        void DetachAll();
+
+        int GetAttachedWndCount() const{ return m_arrHandlers.GetCount();}
+
+        wxArrayPtrVoid *GetHandlersArr(){ return &m_arrHandlers; }
+
+        // returns True if window actually exists
+        wxWindow* winExists(wxWindow*);
+        wxWindow* FindWindowRecursively(const wxWindow* parent, const wxWindow* handle);
+
+        //! Returns TRUE if the given window is attached to this keybinder.
+        bool IsAttachedTo(wxWindow *p) const{ return FindHandlerIdxFor(p) != wxNOT_FOUND; }
+
+        //! Returns the index of the handler for the given window.
+        int FindHandlerIdxFor(wxWindow *p) const;
+
+        // status bar
+        void CreateStatusBar();
+        void ShowStatusBar();
+        void HideStatusBar();
+        wxStatusBar *GetStatusBar(){ return m_pStatusBar; };
 
     private:
-        //indicate if wxVike have init.
-        bool m_bBound;
+        wxStatusBar *m_pStatusBar;
+        DECLARE_CLASS(cbVike)
+};//cbVike
 
-        void OnEditorOpen(CodeBlocksEvent& event);
-        void OnEditorClose(CodeBlocksEvent& event);
-        void AttachEditor(wxWindow* pEditor);
-        void DetachEditor(wxWindow* pWindow, bool deleteEvtHandler = true);
+class VikeEvtHandler : public wxEvtHandler
+{
+    //! The wxVike called by wxBinderEvtHandler when receiving a wxKeyEvent.
+    cbVike *m_pVike;
 
-        void OnAppStartupDone(CodeBlocksEvent& event);
-        void OnAppStartShutdown(CodeBlocksEvent& event);
+    //! The target window which will process the keyevents
+    wxWindow *m_pTarget;
 
-        void OnWindowCreateEvent(wxEvent& event);
-        void OnWindowDestroyEvent(wxEvent& event);
+    VikeWin *m_pVikeWin;
+    protected:
 
-        void delAccer(wxMenuBar* menuBar,wxString l1_menu,wxString l2_menu)
-        {
-            int pos = menuBar->FindMenu(l1_menu);
-            if (pos != wxNOT_FOUND)
-            {
-                wxMenu* fm = menuBar->GetMenu(pos);
-                int id = fm->FindItem(l2_menu);
-                wxMenuItem* mn = fm->FindItem(id);
-                if(mn != NULL) mn->SetItemLabel(mn->GetItemLabelText());
-            }
-        }
+    //! The event handler for wxKeyEvents.
+    void OnChar(wxKeyEvent &event);
+    void OnFocus(wxFocusEvent &event);
+    void OnEspecialKey(wxKeyEvent &event);
 
-        void delAccer(wxMenuBar* menuBar,wxString l1_menu,wxString l2_menu,wxString l3_menu)
-        {
-            int pos = menuBar->FindMenu(l1_menu);
-            if (pos != wxNOT_FOUND)
-            {
-                wxMenu* fm = menuBar->GetMenu(pos);
-                int id = fm->FindItem(l2_menu);
-                wxMenuItem* mn = fm->FindItem(id);
-                if (mn != NULL && (fm = mn->GetSubMenu()))
-                {
-                    id = fm->FindItem(l3_menu);
-                    mn = fm->FindItem(id);
-                    if(mn != NULL) mn->SetItemLabel(mn->GetItemLabelText());
-                }
-            }
-        }
+    public:
 
-        wxWindow*       pcbWindow;
+    //! Attaches this event handler to the given window.
+    //! The given vike will be called on each keyevent.
+    VikeEvtHandler(cbVike *vike, wxWindow *tg)
+        : m_pVike(vike), m_pTarget(tg)
+    {
+        m_pVikeWin = new VikeWin(vike->GetStatusBar());
+        //if(flag == SET_START_CARET){
+        m_pVikeWin->SetStartCaret((wxScintilla*)tg);
+        //}
+        m_pTarget->PushEventHandler(this);
+    }
 
-        wxVike *pVike;
-};//class cbVike
+    //! Removes this event handler from the window you specified
+    //! during construction (the target window).
+    virtual ~VikeEvtHandler()
+    {
+        if ( m_pTarget ) m_pTarget->RemoveEventHandler(this);
+        if ( m_pVikeWin ) delete m_pVikeWin;
+    }
 
-#endif // __CBVIKE_H__
+
+    //! Returns TRUE if this event handler is attached to the given window.
+    bool IsAttachedTo(wxWindow *p)
+    { return p == m_pTarget; }
+
+    //! Returns the wxVike which is called-back by this event handler.
+    cbVike *GetBinder() const
+    { return m_pVike; }
+
+    //! Returns the window which this event handler is filtering.
+    wxWindow *GetTargetWnd() const
+    { return m_pTarget; }
+
+    wxWindow* SetWndInvalid(wxWindow* pnewWnd=0)
+    { m_pTarget = pnewWnd; return m_pTarget; }
+
+
+    private:
+    DECLARE_CLASS(VikeEvtHandler)
+    DECLARE_EVENT_TABLE()
+};
+
+#endif //__VIKE_H__

@@ -3,10 +3,10 @@
     <SdkVersion major="1" minor="11" release="0" />
     <Plugin name="cbVike">
         <Value title="Keyboard shortcuts like vi" />
-        <Value version="0.9.1 2011/12/28" />
+        <Value version="0.1 2014/5/7" />
         <Value description="Code::Blocks vike" />
-        <Value author="Jia Wei" />
-        <Value authorEmail="ayheos@gmail.com" />
+        <Value author="Arthur Zhou" />
+        <Value authorEmail="Arthur.zmj@gmail.com" />
         <Value authorWebsite="" />
         <Value thanksTo="Thanks to...
             Pecan Heber's keybinder plugin

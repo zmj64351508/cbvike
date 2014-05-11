@@ -15,7 +15,7 @@ Movement
 	w, b
 	gg, (num)G, 0
 	^, $
-	f,F
+    f,F
 
 Insert
 
@@ -24,19 +24,20 @@ Insert
 Editing
 
 	r(work properly with ASCII)
-	(num)cw, (num)cc, c$ 
+	(num)cw, (num)cc, (num)c$ 
 	u, Ctrl-r
 
 Cut and paste
 
-	x
-	(num)yw, (num)yy, y$ 
-	(num)dw, (num)dd, d$, D
-	p, P 
+	x, X
+	(num)yw, (num)yy, (num)y$
+	(num)dw, (num)dd, (num)d$, (num)D
+	p, P
 
 
 ## Known Issues
 
+* When the key shortcuts are defined in the `keybinder` plugin like `Ctrl-r`, it won't take effect. So if you want to used such shortcuts, ensure it is not defined in `keybinder`. Maybe I'll provide a script to undefine such shortcuts in `keybinder` later. 
 * It can't handle split window edit. 
 
 ## Installation

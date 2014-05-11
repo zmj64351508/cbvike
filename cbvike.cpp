@@ -1,287 +1,291 @@
-#if defined(__GNUG__)
-	#pragma implementation "cbvike.h"
+#ifdef __GNUG__
+#pragma implementation "m_pVike.h"
 #endif
 
-#include "sdk.h"
-#ifndef CB_PRECOMP
-    #include <wx/log.h>
+
+// For compilers that support precompilation, includes "wx/wx.h".
+#include "wx/wxprec.h"
+
+#ifndef WX_PRECOMP
+#include "wx/wx.h"
 #endif
-#include "cbstyledtextctrl.h"
+
+#if defined(CB_PRECOMP)
+#include "sdk.h"
+#else
+#include "sdk_common.h"
+#include "sdk_events.h"
+#include "logmanager.h"
+#endif
+
+// includes
+#include <wx/event.h>
+
 #include "cbvike.h"
 #include "debugging.h"
-#include "vifunc.h"
 
-// Register the plugin
-namespace
-{
-    PluginRegistrant<cbVike> reg(_T("cbVike"));
-};
+IMPLEMENT_CLASS(cbVike, wxObject)
+IMPLEMENT_CLASS(VikeEvtHandler, wxEvtHandler)
 
+// event table for wxVike
+BEGIN_EVENT_TABLE(VikeEvtHandler, wxEvtHandler)
+    // wxEVT_KEY_DOWN received some special key like ESC, BACKSPCE etc.
+    EVT_KEY_DOWN(VikeEvtHandler::OnEspecialKey)
+    // wxEVT_CHAR recevied any ASCII characters
+    EVT_CHAR(VikeEvtHandler::OnChar)
+    EVT_SET_FOCUS(VikeEvtHandler::OnFocus)
+
+#if defined( __WXMSW__	)		// supported only on Win32
+#if wxUSE_HOTKEY                // enabled?
+#if wxCHECK_VERSION(2, 5, 1)	// and from wxWidgets 2.5.1
+
+    // I don't think this is needed because wxEVT_HOTKEY are generated
+    // only in some special cases...
+    EVT_HOTKEY(wxID_ANY, VikeEvtHandler::OnChar)
+#endif
+#endif
+#endif
+
+END_EVENT_TABLE()
+
+#if !wxCHECK_VERSION(2, 5, 1)
+
+    // with wx previous to 2.5 we need to use wxWindow::Node* instead
+    // of wxWindow::compatibility_iterator (thanks to Sebastien Berthet for this)
+#define compatibility_iterator			Node*
+#endif
+
+// window names allowed for which vike may attach()
+wxArrayString cbVike::usableWindows;                    //+v0.4.4
 
 // ----------------------------------------------------------------------------
-cbVike::cbVike()
+// wxBinderEvtHandler
+// ----------------------------------------------------------------------------
+void VikeEvtHandler::OnChar(wxKeyEvent &p)
 {
+    m_pVike->OnChar(m_pVikeWin, p);
+}
+
+void VikeEvtHandler::OnEspecialKey(wxKeyEvent &p)
+{
+    m_pVike->OnEspecialKey(m_pVikeWin, p);
+}
+
+void VikeEvtHandler::OnFocus(wxFocusEvent &p)
+{
+    LOGIT(_("on focus"));
+    m_pVikeWin->UpdateStatusBar();
+    //vike->OnFocus(p, GetNextHandler());
+    //((wxWindow*)p.GetWindow())->SetFocus();
+    p.Skip();
+}
+
+void cbVike::CreateStatusBar()
+{
+    m_pStatusBar = new wxStatusBar(Manager::Get()->GetAppWindow(),  wxID_ANY, wxSB_NORMAL, wxString((wxChar*)"cbVike"));
+    m_pStatusBar->SetFieldsCount(STATUS_FIELD_NUM);
+    CodeBlocksDockEvent evt(cbEVT_ADD_DOCK_WINDOW);
+    evt.name = _T("Vike status");
+    evt.title = _("Vike status");
+    evt.pWindow = m_pStatusBar;
+    evt.minimumSize.Set(25, 25);
+    evt.desiredSize.Set(25, 25);
+    evt.floatingSize.Set(150, 25);
+    evt.dockSide = CodeBlocksDockEvent::dsBottom;
+    evt.hideable = true;
+    Manager::Get()->ProcessEvent(evt);
+}
+
+void cbVike::ShowStatusBar()
+{
+    CodeBlocksDockEvent evt(cbEVT_SHOW_DOCK_WINDOW);
+    evt.pWindow = m_pStatusBar;
+    Manager::Get()->ProcessEvent(evt);
+}
+
+void cbVike::HideStatusBar()
+{
+    CodeBlocksDockEvent evt(cbEVT_HIDE_DOCK_WINDOW);
+    evt.pWindow = m_pStatusBar;
+    Manager::Get()->ProcessEvent(evt);
+}
+
+// ----------------------------------------------------------------------------
+//  wxVike Attach
+// ----------------------------------------------------------------------------
+void cbVike::Attach(wxWindow *p)
+{
+    //LOGIT( _T("wxVike: Attach for %p and if crash??"), p );
+    //((wxScintilla*)p)->SetCaretStyle(wxSCI_CARETSTYLE_BLOCK);
+    LOGIT( _T("wxVike:Attach for [%p]"), p );
+    if (!p || IsAttachedTo(p))
+        return;		// already attached !!!
+
+    LOGIT( _T("wxVike:Attach2[%p]"), p );
+
+    if (p->GetExtraStyle() & wxWS_EX_TRANSIENT)
+        return;		// do not attach ourselves to temporary windows !!
+
+    LOGIT( _T("wxVike:Attach3[%p]"), p );
+
+    //+v0.4.4 we allow only static windows to be attached by codeblocks
+    // Disappearing frames/windows cause crashes
+    wxString windowName = p->GetName().MakeLower();
+
+    if (wxNOT_FOUND == usableWindows.Index(_T("*"),false)) //+v0.4.4 debugging
+        if (wxNOT_FOUND == usableWindows.Index(windowName,false)) //+v0.4.2
+        {
+            LOGIT( _T("wxVike::Attach skipping [%s]"), p->GetName().c_str() );
+            return;
+        }
+
+    LOGIT(wxT("wxVike::Attach - attaching to [%s] %p"), p->GetName().c_str(),p);
+
+    // create a new event handler for this window
+    wxEvtHandler *h = new VikeEvtHandler(this, p);
+    m_arrHandlers.Add((void*)h);
+}
+
+// ----------------------------------------------------------------------------
+//  wxVike FindHandlerIdxFor
+// ----------------------------------------------------------------------------
+int cbVike::FindHandlerIdxFor(wxWindow *p) const
+{
+	for (int i=0; i<(int)m_arrHandlers.GetCount(); i++)
+		if (((VikeEvtHandler *)m_arrHandlers.Item(i))->IsAttachedTo(p))
+			return i;
+
+	return wxNOT_FOUND;
+}
+
+void cbVike::Detach(wxWindow *p, bool deleteEvtHandler)
+{
+	if (!p || !IsAttachedTo(p))
+		return;		// this is not attached...
+
+    LOGIT(wxT("wxKeyBinder::Detach - detaching from [%s] %p"), p->GetName().c_str(),p);
+
+	// remove the event handler
+	int idx = FindHandlerIdxFor(p);
+	VikeEvtHandler *toremove = (VikeEvtHandler*)m_arrHandlers.Item(idx);
+	m_arrHandlers.RemoveAt(idx, 1);
+
+	// the wxBinderEvtHandler will remove itself from p's event handlers
+	if (deleteEvtHandler) delete toremove;
+}
+
+// ----------------------------------------------------------------------------
+wxWindow* cbVike::FindWindowRecursively(const wxWindow* parent, const wxWindow* handle)
+// ----------------------------------------------------------------------------
+{//+v0.4.4
+    if ( parent )
+    {
+        // see if this is the one we're looking for
+        if ( parent == handle )
+            return (wxWindow *)parent;
+
+        // It wasn't, so check all its children
+        for ( wxWindowList::compatibility_iterator node = parent->GetChildren().GetFirst();
+              node;
+              node = node->GetNext() )
+        {
+            // recursively check each child
+            wxWindow *win = (wxWindow *)node->GetData();
+            wxWindow *retwin = FindWindowRecursively(win, handle);
+            if (retwin)
+                return retwin;
+        }
+    }
+
+    // Not found
+    return NULL;
+}
+
+// ----------------------------------------------------------------------------
+wxWindow* cbVike::winExists(wxWindow *parent)
+// ----------------------------------------------------------------------------
+{ //+v0.4.4
+
+    if ( !parent )
+    {
+        return NULL;
+    }
+
+    // start at very top of wx's windows
+    for ( wxWindowList::compatibility_iterator node = wxTopLevelWindows.GetFirst();
+          node;
+          node = node->GetNext() )
+    {
+        // recursively check each window & its children
+        wxWindow* win = node->GetData();
+        wxWindow* retwin = FindWindowRecursively(win, parent);
+        if (retwin)
+            return retwin;
+    }
+
+    return NULL;
+}
+
+// ----------------------------------------------------------------------------
+//  wxVike DetachAll
+// ----------------------------------------------------------------------------
+void cbVike::DetachAll()
+{
+    wxWindow* pwin;
+	LOGIT(_T("wxVike::DetachAll - detaching from all my [%d] targets"), GetAttachedWndCount());
+
+	//- delete all handlers (they will automatically remove themselves from
+	//- event handler chains)
+    //-	for (int i=0; i < (int)m_arrHandlers.GetCount(); i++)
+    //-		delete (wxBinderEvtHandler*)m_arrHandlers.Item(i);
+
+	for (int i=0; i < (int)m_arrHandlers.GetCount(); i++)
+	 {
+        VikeEvtHandler* pHdlr = (VikeEvtHandler*)m_arrHandlers.Item(i);
+        pwin = pHdlr->GetTargetWnd();     //+v0.4
+        if  (!winExists( pwin ) )
+        {   //+v0.4.9
+            // tell dtor not to crash by using RemoveEventHander()
+            pHdlr->SetWndInvalid(0);
+            LOGIT( _T("WxKeyBinder:DetachAll:window NOT found %p <----------"), pwin); //+v0.4.6
+        }
+        #if LOGGING
+         if (pHdlr->GetTargetWnd())
+           LOGIT( _T("WxKeyBinder:DetachAll:Deleteing EvtHdlr for [%s] %p"), pwin->GetLabel().GetData(), pwin);     //+v0.4
+        #endif
+        delete pHdlr;
+	 }
+
+	// and clear the array
+	m_arrHandlers.Clear();
+
+}//DetachAll
+
+// ----------------------------------------------------------------------------
+//  wxVike OnChar
+// ----------------------------------------------------------------------------
+void cbVike::OnChar(VikeWin *vikeWin, wxKeyEvent &event)
+{
+    //begin trap the keycode
+    bool skip = vikeWin->NormalKeyHandler(event);
+    if(skip){
+        event.Skip();
+    }
+}
+
+void cbVike::OnEspecialKey(VikeWin *vikeWin, wxKeyEvent &event)
+{
+    //begin trap the keycode
+    bool skip = vikeWin->EspecialKeyHandler(event);
+    if(skip){
+        event.Skip();
+    }
+}
+
+void cbVike::OnFocus(wxFocusEvent &event)
+{
+    ((wxScintilla*)event.GetEventObject())->StyleResetDefault();
+    //((wxScintilla*)event.GetEventObject())->SetCaretStyle(wxSCI_CARETSTYLE_LINE);
+    LOGIT(_T("set line"));
 }
 // ----------------------------------------------------------------------------
-cbVike::~cbVike()
-// ----------------------------------------------------------------------------
-{
-}
-
-// ----------------------------------------------------------------------------
-void cbVike::OnAttach()
-// ----------------------------------------------------------------------------
-{
-    LOGIT(_T("Enter OnAttach"));
-    pcbWindow = Manager::Get()->GetAppWindow();
-
-    #if LOGGING
-        wxLog::EnableLogging(true);
-        pMyLog = new wxLogWindow(pcbWindow,wxT("vike"),true,false);
-        wxLog::SetActiveTarget(pMyLog);
-        LOGIT(_T("vike log open"));
-        pMyLog->Flush();
-        pMyLog->GetFrame()->Move(20,20);
-    #endif
-
-    wxVike::usableWindows.Add(_T("sciwindow"));
-    wxVike::usableWindows.Add(_T("flat notebook"));
-
-	PluginInfo* pInfo = (PluginInfo*)(Manager::Get()->GetPluginManager()->GetPluginInfo(this));
-	pInfo->version = wxT(VERSION);
-
-    m_bBound = FALSE;
-
-	Manager::Get()->RegisterEventSink(cbEVT_EDITOR_OPEN, new cbEventFunctor<cbVike, CodeBlocksEvent>(this, &cbVike::OnEditorOpen));
-	Manager::Get()->RegisterEventSink(cbEVT_EDITOR_CLOSE, new cbEventFunctor<cbVike, CodeBlocksEvent>(this, &cbVike::OnEditorClose));
-	Manager::Get()->RegisterEventSink(cbEVT_APP_STARTUP_DONE, new cbEventFunctor<cbVike, CodeBlocksEvent>(this, &cbVike::OnAppStartupDone));
-    Manager::Get()->RegisterEventSink(cbEVT_APP_START_SHUTDOWN, new cbEventFunctor<cbVike, CodeBlocksEvent>(this, &cbVike::OnAppStartShutdown));
-
-	return;
-}//OnAttach
-
-// ----------------------------------------------------------------------------
-void cbVike::OnRelease(bool appShutDown)
-// ----------------------------------------------------------------------------
-{
-    //release all event handlers when plugin is disabled.
-	pVike->DetachAll();
-    delete pVike;
-}//OnRelease
-
-void cbVike::OnAppStartupDone(CodeBlocksEvent& event)
-// ----------------------------------------------------------------------------
-{
-    LOGIT(_T("Enter OnAppStartupDone"));
-    if(!m_bBound) {
-        m_bBound = TRUE;
-        pVike = new wxVike();
-    }
-
-// Doesn't Concerned about these event except spilt window hack
-// Currently ignore split window since a special event being added
-/*    Connect( wxEVT_CREATE,
-        (wxObjectEventFunction) (wxEventFunction)
-        (wxCommandEventFunction) &cbVike::OnWindowCreateEvent);
-*/
-    Connect( wxEVT_DESTROY,
-        (wxObjectEventFunction) (wxEventFunction)
-        (wxCommandEventFunction) &cbVike::OnWindowDestroyEvent);
-
-
-    event.Skip();
-}//OnAppStartupDone
-
-
-// ----------------------------------------------------------------------------
-void cbVike::OnAppStartShutdown(CodeBlocksEvent& event)
-// ----------------------------------------------------------------------------
-{
-    LOGIT( _T("OnAppStartShutdown") );
-
-    event.Skip();
-}//OnAppStartShutdown
-
-void cbVike::OnEditorOpen(CodeBlocksEvent& event)
-// ----------------------------------------------------------------------------
-{
-    LOGIT(_T("Enter OnEditorOpen"));
-    if (IsAttached())
-    {
-        if(!m_bBound) {
-            OnAppStartupDone(event);
-        }
-        wxWindow* thisWindow = event.GetEditor();
-        wxWindow* thisEditor = thisWindow->FindWindowByName(_T("SCIwindow"),thisWindow);
-
-        cbEditor* ed = 0;
-        EditorBase* eb = event.GetEditor();
-
-        if (eb && eb->IsBuiltinEditor())
-        {
-            ed = static_cast<cbEditor*>(eb);
-            thisEditor = ed->GetControl();
-        }
-
-        /* Temparory hack */
-        //((wxScintilla*)thisEditor)->SetCaretStyle(wxSCI_CARETSTYLE_BLOCK);
-        // pVike->Startup(thisEditor);
-
-        LOGIT(_T("Attach in OnEditorOpen"));
-        pVike->Attach(thisEditor, SET_START_CARET);
-    }
-    event.Skip();
-}//OnEditorOpen
-
-// ----------------------------------------------------------------------------
-void cbVike::OnEditorClose(CodeBlocksEvent& event)
-// ----------------------------------------------------------------------------
-{
-    LOGIT(_T("Enter OnEditorClose"));
-    if (IsAttached() && m_bBound)
-    {
-        wxWindow* thisWindow = event.GetEditor();
-
-        wxWindow* thisEditor = thisWindow->FindWindowByName(_T("SCIwindow"), thisWindow);
-
-        // find editor window the Code::Blocks way
-        // find the cbStyledTextCtrl wxScintilla "SCIwindow" to this EditorBase
-        cbEditor* ed = 0;
-        EditorBase* eb = event.GetEditor();
-        if ( eb && eb->IsBuiltinEditor() )
-        {
-            ed = static_cast<cbEditor*>(eb);
-            thisEditor = ed->GetControl();
-        }
-        LOGIT(_T("this Editor is %p"), thisEditor);
-        //------------------------------------------------------------------
-        // This code never executed because ed->GetControl no longer exists
-        // See OnWindowDestroyEvent() which gets the window as an event.object
-        //------------------------------------------------------------------
-        if(thisEditor) {
-            pVike->Detach(thisEditor);
-            #if LOGGING
-                LOGIT(_T("OnEditorClose %s %p"), thisEditor->GetLabel().c_str(), thisEditor);
-            #endif
-        }
-    }
-    event.Skip();
-}//OnEditorClose
-
-void cbVike::OnWindowCreateEvent(wxEvent& event)
-// ----------------------------------------------------------------------------
-{
-    LOGIT(_T("Enter OnWindowCreateEvent"));
-    if ( m_bBound )
-    {
-        wxWindow* pWindow = (wxWindow*)(event.GetEventObject());
-        cbEditor* ed = 0;
-        cbStyledTextCtrl* p_cbStyledTextCtrl = 0;
-        cbStyledTextCtrl* pLeftSplitWin = 0;
-        cbStyledTextCtrl* pRightSplitWin = 0;
-        ed  = Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor();
-
-        if (ed)
-        {
-            p_cbStyledTextCtrl = ed->GetControl();
-            pLeftSplitWin = ed->GetLeftSplitViewControl();
-            pRightSplitWin = ed->GetRightSplitViewControl();
-            //Has this window been split?
-            //**This is a temporary hack until some cbEvents are defined**
-            // Can't set startup caret when using this hack, if you want to use this hack
-            // you need to disable the startup caret and set vike to startup at INSERT mode
-            if ( pWindow && (pRightSplitWin == 0) )
-            {
-                //-if (pRightSplitWin eq pWindow)
-                //-{    Attach(pRightSplitWin);
-                if (pWindow->GetParent() == ed)
-                {
-                    LOGIT( _T("OnWindowCreateEvent Attaching:%p"), pWindow );
-                    AttachEditor(pWindow);
-                }
-            }
-        }
-    }//if m_bBound...
-
-
-    event.Skip();
-}//OnWindowCreateEvent
-
-void cbVike::OnWindowDestroyEvent(wxEvent& event)
-// ----------------------------------------------------------------------------
-{
-    //NB: event.GetGetEventObject() is a SCIwindow*, not and EditorBase*
-
-    // wxEVT_DESTROY entry
-    // This routine simply clears the memorized Editor pointers
-    // that dont get cleared by OnEditorClose, which doesnt get
-    // entered for split windows. CodeBlocks doesnt yet have events
-    // when opening/closing split windows.
-    if (!m_bBound){ event.Skip(); return;}
-
-    wxWindow* thisWindow = (wxWindow*)(event.GetEventObject());
-    //-Detach(pWindow); causes crash
-    if ( (thisWindow))
-    {
-        // deleteing the EvtHandler here will crash CB
-        // detach before removing the ed ptr
-        DetachEditor(thisWindow, /*DeleteEvtHander*/false);
-
-        #ifdef LOGGING
-         LOGIT( _T("OnWindowDestroyEvent Removed %p"), thisWindow);
-        #endif //LOGGING
-    }
-    event.Skip();
-}//OnWindowClose
-
-// ----------------------------------------------------------------------------
-void cbVike::AttachEditor(wxWindow* pWindow)
-// ----------------------------------------------------------------------------
-{
-    LOGIT(_T("Enter AttachEditor"));
-    if (IsAttached())
-    {
-        wxWindow* thisEditor = pWindow->FindWindowByName(_T("SCIwindow"),pWindow);
-
-        //skip editors that we already have
-        if ( thisEditor)
-        {
-            LOGIT(_T("Attach in AttachEditor"));
-            //Rebind keys to newly opened windows
-            pVike->Attach(thisEditor, 0);
-            #if LOGGING
-             LOGIT(_T("cbKB:AttachEditor %s %p"), thisEditor->GetLabel().c_str(), thisEditor);
-            #endif
-        }
-    }
-}
-// ----------------------------------------------------------------------------
-void cbVike::DetachEditor(wxWindow* pWindow, bool deleteEvtHandler)
-// ----------------------------------------------------------------------------
-{
-    if (IsAttached())
-     {
-
-         wxWindow* thisWindow = pWindow;
-
-         // Cannot use GetBuiltinActiveEditor() because the active Editor is NOT the
-         // one being closed!!
-         // wxWindow* thisEditor
-         //  = Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor()->GetControl();
-
-         //find the cbStyledTextCtrl wxScintilla window
-         wxWindow* thisEditor = thisWindow->FindWindowByName(_T("SCIwindow"), thisWindow);
-
-        if ( thisEditor)
-         {
-            pVike->Detach(thisEditor, deleteEvtHandler);
-            #if LOGGING
-                 LOGIT(_T("cbKB:DetachEditor %s %p"), thisEditor->GetLabel().c_str(), thisEditor);
-            #endif
-         }//if
-     }
-
-}//DetachEditor
-
-// ----------------------------------------------------------------------------
-

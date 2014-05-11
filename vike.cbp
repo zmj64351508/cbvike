@@ -62,12 +62,12 @@
 		</ExtraCommands>
 		<Unit filename="cbvike.cpp" />
 		<Unit filename="cbvike.h" />
+		<Unit filename="cbvike_plugin.cpp" />
+		<Unit filename="cbvike_plugin.h" />
 		<Unit filename="debugging.h" />
 		<Unit filename="manifest.xml" />
 		<Unit filename="vifunc.cpp" />
 		<Unit filename="vifunc.h" />
-		<Unit filename="vike.cpp" />
-		<Unit filename="vike.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

@@ -5,16 +5,9 @@
 #pragma interface "vifunc.h"
 #endif
 
+#include "debugging.h"
+
 #include <wx/hashmap.h>
-
-class ViFunc;
-class VikeWin;
-typedef void (ViFunc::*vFunc)(VikeWin *, wxScintilla*);
-
-#define MAKE_PAIRS(mode,ekey,lastkeycode,keycode,value) do{ \
-        unsigned long int key = calcKey(mode,ekey,lastkeycode,keycode); \
-        pairs[key] = value; \
-    }while(0)
 
 #define UPPER_CODE(code) (code-'a'+'A')
 #define LOWER_CODE(code) (code-'A'+'a')
@@ -24,87 +17,116 @@ typedef void (ViFunc::*vFunc)(VikeWin *, wxScintilla*);
 #define GET_KEYCODE(code) (code & 0xff)
 #define BOOKMARK_MARKER        2
 
-WX_DECLARE_HASH_MAP(unsigned long, vFunc, wxIntegerHash, wxIntegerEqual, LongHashMap);
-WX_DECLARE_HASH_MAP( wxString, int, wxStringHash, wxStringEqual, StringHashMap);
+enum VikeMode{ INSERT, NORMAL, VISUAL };
+enum VikeState {
+    VIKE_START,
+    VIKE_REPLACE,       // r
+    VIKE_FIND_FORWARD,  // f
+    VIKE_FIND_BACKWORD, // F
+    VIKE_CHANGE,        // c
+    VIKE_DELETE,        // d
+    VIKE_YANK,          // y
+    VIKE_EXTRA,         // g
+    VIKE_END,
+};
 
-enum eFKEY{ NONE=0x0, CTRL=0x1, SHIFT=0x2, ALT=0x4 };
-enum eMODE{ INSERT, NORMAL, VISUAL };
+enum VikeStatusBarField{
+    STATUS_COMMAND,
+    STATUS_KEY,
+    STATUS_FIELD_NUM,
+};
 
+class ViFunc;
 
-/* Every window has a instance of VikeWin */
+/* Every window has an instance of VikeWin */
 class VikeWin{
     public:
-        VikeWin();
+        VikeWin(wxStatusBar *sb);
 
-        int execute(wxKeyEvent &event);
+        bool NormalKeyHandler(wxKeyEvent &event);
+        bool EspecialKeyHandler(wxKeyEvent &event);
 
         /* set caret when startup */
-        void SetStartCaret(wxScintilla* p){
-            p->SetCaretStyle(wxSCI_CARETSTYLE_BLOCK);
+        void SetStartCaret(wxScintilla* editor) const
+        {
+            editor->SetCaretStyle(wxSCI_CARETSTYLE_BLOCK);
         }
 
-        void Finish(){
-            Number = 0;
-            keyCodes = 0;
+        void Finish(wxScintilla *editor)
+        {
+            m_iDupNumber = 0;
+            m_iState = VIKE_END;
+            m_iCaretPos = editor->GetCurrentPos();
         }
 
-        void FinishNumber(){
-            keyCodes = 0;
+        int GetUndoPos(){ return m_iCaretPos; }
+
+        void SetModifier(int key){ m_iModifier = key; }
+        int GetMonifier() const { return m_iModifier; }
+
+        void ChangeMode(VikeMode new_mode)
+        {
+            m_iMode = new_mode;
+            UpdateStatusBar();
         }
 
-        void PrepareNext(){
-            keyCodes = keyCode;
+        int GetMode() const { return m_iMode; }
+
+        void AppendKeyStatus(int key_code) { m_arrKey.Add(key_code); }
+        void ClearKeyStatus() { m_arrKey.Clear(); }
+
+        void UpdateStatusBar(){
+            const wxChar *mode_txt = NULL;
+            switch(m_iMode){
+            case NORMAL:
+                mode_txt = _T("-- NORMAL --"); break;
+            case INSERT:
+                mode_txt = _T("-- INSERT --"); break;
+            case VISUAL:
+                mode_txt = _T("-- VISIUAL --"); break;
+            default:
+                break;
+            }
+            m_pStatusBar->SetStatusText(mode_txt, STATUS_COMMAND);
+
+            wxString txt;
+            if(!m_arrKey.IsEmpty()){
+                LOGIT(_T("not empty"));
+                for(int i = 0; i < m_arrKey.GetCount(); i++){
+                    txt.Append(m_arrKey[i]);
+                    //LOGIT(_T("%c"), key_array[i]);
+                }
+            }
+
+            m_pStatusBar->SetStatusText(txt, STATUS_KEY);
         }
 
-        void ShiftPrepareNext(){
-            keyCodes = LOWER_CODE(keyCode);
-        }
+        void SetState(VikeState new_state){ m_iState = new_state; }
+        int GetState(){ return m_iState; }
 
-        void ChangeMode(eMODE mode){
-            gMode = mode;
-        }
-
-        void SetKeyCode(int code){
-            keyCode = code;
-        }
-
-        int GetKeyCode(){
-            return keyCode;
-        }
-
-        int GetLastKeyCode(){
-            return keyCodes;
-        }
-
-        eMODE GetCurrentMode(){
-            return gMode;
-        }
-
-        void SetNumber(int num){
-            Number = num;
-        }
-
-        int GetNumber(){
-            return Number;
-        }
+        void ShiftAddDupNumber(int num){ m_iDupNumber = m_iDupNumber * 10 + num; }
+        bool IsDup(){ return m_iDupNumber != 0; }
+        int GetDupNumber(){ return m_iDupNumber == 0 ? 1 : m_iDupNumber; }
 
         // the executing function
         ViFunc *func;
         // current input character
         char Char;
-        //marker register now set only one (a)
-        StringHashMap markers;
 
     private:
         //current edit mode
-        eMODE gMode;
+        VikeMode m_iMode;
+        //current state
+        VikeState m_iState;
         // Duplicate number
-        int Number;
-        //current keycode
-        int keyCode;
-        //store last keycode temporaly
-        int keyCodes;
+        wxStatusBar *m_pStatusBar;
+
+        wxArrayInt m_arrKey;
+        int m_iDupNumber;
+        int m_iModifier;
+        int m_iCaretPos;
 };
+
 
 /* ViFunc has only one global instance called by VikeWin */
 class ViFunc
@@ -114,9 +136,9 @@ class ViFunc
             return &gViFunc;
         }
 
-
         //keycode process entry
-        bool execute(VikeWin *curVike, wxKeyEvent &event);
+        bool NormalKeyHandler(VikeWin *curVike, wxKeyEvent &event);
+        bool EspecialKeyHandler(VikeWin *curVike, wxKeyEvent &event);
 
     private:
         ViFunc();
@@ -130,23 +152,7 @@ class ViFunc
         /* temperoray hack for cut line should be a global flag for
            all the open editors */
         // cut line or cut word
-        int LineCuted;
-        bool CapsLock;
-
-        static const char ShiftKeyTable[128];
-
-        //store keycode maps
-        LongHashMap pairs;
-
-        unsigned long int calcKey(
-                eMODE mode, //vim normal/insert/visual mode
-                int ekey, //if shift/ctrl/alt keycodes have pressed
-                unsigned char lastkeycode, //record last keycode pressed, like gg(go document home)
-                unsigned char keycode //current keycode
-                )
-        {
-            return (mode << 4 | ekey) <<16 | lastkeycode << 8 | keycode;
-        }
+        bool m_bLineCuted;
 
         wxString getActiveFile()
         {
@@ -159,149 +165,143 @@ class ViFunc
             return ed->GetFilename();
         }
 
-        char MakeChar(int fkey, int keyCode)
-        {
-            char makechar;
-            if(fkey & SHIFT){
-                makechar = ShiftKeyTable[keyCode];
-            }else{
-                if(keyCode >= 'A' && keyCode <= 'Z'){
-                    makechar = keyCode-'A'+'a';
-                }else{
-                    makechar = keyCode;
-                }
-            }
-            return makechar;
-        }
 
-        int GenerateFunctionalKey(wxKeyEvent &event)
-        {
-            int fkey = NONE;
-            if(event.m_controlDown) {
-                fkey |= CTRL;
-            } else if(event.m_shiftDown) {
-                if(CapsLock){
-                    fkey &= ~SHIFT;
-                }else{
-                    fkey |= SHIFT;
-                }
-            } else {
-                if(CapsLock){
-                    fkey |= SHIFT;
-                }else{
-                    fkey = NONE;
-                }
-            }
-            return fkey;
-        }
+        bool InsertModeSp(VikeWin *m_pVikeWin, int keyCode, wxScintilla *editor);
+        bool NormalModeSp(VikeWin *m_pVikeWin, int keyCode, int m_iModifier, wxScintilla *editor);
+        bool NormalMode(VikeWin *m_pVikeWin, int keyCode, int m_iModifier, wxScintilla *editor);
 
         //insert mode
-        void i_esc(VikeWin* vike, wxScintilla* editor);
+        void i_esc(VikeWin* m_pVike, wxScintilla* editor);
 
         //normal mode
-        void n_esc(VikeWin* vike, wxScintilla* editor);
-        void n_delete(VikeWin *vike, wxScintilla* editor);
-        void n_number(VikeWin* vike, wxScintilla* editor);
-        void n_0(VikeWin* vike, wxScintilla* editor);
+        void n_esc(VikeWin* m_pVike, wxScintilla* editor);
+        void n_backspace(VikeWin* m_pVike, wxScintilla* editor);
+        //void n_delete(VikeWin *vike, wxScintilla* editor);
+        void n_number(VikeWin* m_pVike, int number, wxScintilla* editor);
+        void n_0(VikeWin* m_pVike, wxScintilla* editor);
+        void n_0_end(VikeWin* m_pVike, wxScintilla* editor);
 
         /* move */
-        void n_h(VikeWin* vike, wxScintilla* editor);
-        void n_j(VikeWin* vike, wxScintilla* editor);
-        void n_k(VikeWin* vike, wxScintilla* editor);
-        void n_l(VikeWin* vike, wxScintilla* editor);
-        void n_sf_6(VikeWin* vike, wxScintilla* editor);
-        void n_sf_4(VikeWin* vike, wxScintilla* editor);
+        void n_circumflex(VikeWin* m_pVike, wxScintilla* editor);
+        void n_dollar(VikeWin* m_pVike, wxScintilla* editor);
+        void n_h(VikeWin* m_pVike, wxScintilla* editor);
+        void n_j(VikeWin* m_pVike, wxScintilla* editor);
+        void n_k(VikeWin* m_pVike, wxScintilla* editor);
+        void n_l(VikeWin* m_pVike, wxScintilla* editor);
+        void n_circumflex_end(VikeWin* m_pVike, wxScintilla* editor);
+        void n_h_end(VikeWin* m_pVike, wxScintilla* editor);
+        void n_j_end(VikeWin* m_pVike, wxScintilla* editor);
+        void n_k_end(VikeWin* m_pVike, wxScintilla* editor);
+        void n_l_end(VikeWin* m_pVike, wxScintilla* editor);
+        void n_dollar_end(VikeWin* m_pVike, wxScintilla* editor);
 
-        void n_ctrl_f(VikeWin* vike, wxScintilla* editor);
-        void n_ctrl_b(VikeWin* vike, wxScintilla* editor);
+        void n_ctrl_f(VikeWin* m_pVike, wxScintilla* editor);
+        void n_ctrl_b(VikeWin* m_pVike, wxScintilla* editor);
 
         /* insert and append */
-        void n_i(VikeWin* vike, wxScintilla* editor);
-        void n_I(VikeWin* vike, wxScintilla* editor);
-        void n_a(VikeWin* vike, wxScintilla* editor);
-        void n_A(VikeWin* vike, wxScintilla* editor);
+        void n_i(VikeWin* m_pVike, wxScintilla* editor);
+        void n_I(VikeWin* m_pVike, wxScintilla* editor);
+        void n_a(VikeWin* m_pVike, wxScintilla* editor);
+        void n_A(VikeWin* m_pVike, wxScintilla* editor);
+        void n_i_end(VikeWin* m_pVike, wxScintilla* editor);
+        void n_I_end(VikeWin* m_pVike, wxScintilla* editor);
+        void n_a_end(VikeWin *m_pVike, wxScintilla* editor);
+        void n_A_end(VikeWin* m_pVike, wxScintilla* editor);
 
         /* new line */
-        void n_o(VikeWin* vike, wxScintilla* editor);
-        void n_O(VikeWin* vike, wxScintilla* editor);
+        void n_o(VikeWin* m_pVike, wxScintilla* editor);
+        void n_O(VikeWin* m_pVike, wxScintilla* editor);
+        void n_o_end(VikeWin* m_pVike, wxScintilla* editor);
+        void n_O_end(VikeWin* m_pVike, wxScintilla* editor);
 
         /* goto */
-        void n_G(VikeWin* vike, wxScintilla* editor);
-        void n_g(VikeWin* vike, wxScintilla* editor);
-        void n_gg(VikeWin* vike, wxScintilla* editor);
+        void n_G(VikeWin* m_pVike, wxScintilla* editor);
+        void n_G_end(VikeWin *m_pVike, wxScintilla* editor);
+        void n_g(VikeWin* m_pVike, wxScintilla* editor);
+        void n_gg(VikeWin* m_pVike, wxScintilla* editor);
 
         /* next and previous word */
-        void n_b(VikeWin* vike, wxScintilla* editor);
-        void n_w(VikeWin* vike, wxScintilla* editor);
+        void n_b(VikeWin* m_pVike, wxScintilla* editor);
+        void n_b_end(VikeWin* m_pVike, wxScintilla* editor);
+        void n_w(VikeWin* m_pVike, wxScintilla* editor);
+        void n_w_end(VikeWin *m_pVike, wxScintilla* editor);
 
         /* delete */
-        void n_d(VikeWin* vike, wxScintilla* editor);
-        void n_dw(VikeWin* vike, wxScintilla* editor);
-        void n_dsf_4(VikeWin* vike, wxScintilla* editor);
-        void n_dd(VikeWin* vike, wxScintilla* editor);
+        void n_d(VikeWin* m_pVike, wxScintilla* editor);
+        void n_D(VikeWin* m_pVike, wxScintilla* editor);
+        void n_dw(VikeWin* m_pVike, wxScintilla* editor);
+        void n_ddollar_end(VikeWin* m_pVike, wxScintilla* editor);
+        void n_dd(VikeWin* m_pVike, wxScintilla* editor);
 
         /* change */
-        void n_c(VikeWin* vike, wxScintilla* editor);
-        void n_csf_4(VikeWin *vike, wxScintilla* editor);
-        void n_cw(VikeWin* vike, wxScintilla* editor);
-        void n_cc(VikeWin* vike, wxScintilla* editor);
+        void n_c(VikeWin* m_pVike, wxScintilla* editor);
+        void n_cdollar_end(VikeWin *m_pVike, wxScintilla* editor);
+        void n_cw(VikeWin* m_pVike, wxScintilla* editor);
+        void n_cc(VikeWin* m_pVike, wxScintilla* editor);
 
         /* replace */
-        void n_r(VikeWin* vike, wxScintilla* editor);
-        void n_r_any(VikeWin* vike, wxScintilla* editor);
+        void n_r(VikeWin* m_pVike, wxScintilla* editor);
+        void n_r_any(VikeWin* m_pVike, int keyCode, wxScintilla* editor);
 
         /* find */
-        void n_f(VikeWin* vike, wxScintilla* editor);
-        void n_f_any(VikeWin* vike, wxScintilla* editor);
-        void n_F(VikeWin* vike, wxScintilla* editor);
-        void n_F_any(VikeWin* vike, wxScintilla* editor);
+        void n_f(VikeWin* m_pVike, wxScintilla* editor);
+        void n_f_any(VikeWin* m_pVike, int keyCode, wxScintilla* editor);
+        void n_F(VikeWin* m_pVike, wxScintilla* editor);
+        void n_F_any(VikeWin* m_pVike, int keyCode, wxScintilla* editor);
 
         /* undo and redo */
-        void n_u(VikeWin* vike, wxScintilla* editor);
-        void n_ctrl_r(VikeWin* vike, wxScintilla* editor);
+        void n_u(VikeWin* m_pVike, wxScintilla* editor);
+        void n_ctrl_r(VikeWin* m_pVike, wxScintilla* editor);
+        void n_u_end(VikeWin* m_pVike, wxScintilla* editor);
+        void n_ctrl_r_end(VikeWin* m_pVike, wxScintilla* editor);
 
         /* copy */
-        void n_y(VikeWin* vike, wxScintilla* editor);
-        void n_yw(VikeWin* vike, wxScintilla* editor);
-        void n_yy(VikeWin* vike, wxScintilla* editor);
+        void n_y(VikeWin* m_pVike, wxScintilla* editor);
+        void n_ydollar_end(VikeWin *m_pVike, wxScintilla *editor);
+        void n_yw(VikeWin* m_pVike, wxScintilla* editor);
+        void n_yy(VikeWin* m_pVike, wxScintilla* editor);
 
         /* paste */
-        void n_p(VikeWin* vike, wxScintilla* editor);
-        void n_P(VikeWin* vike, wxScintilla* editor);
+        void n_p(VikeWin* m_pVike, wxScintilla* editor);
+        void n_P(VikeWin* m_pVike, wxScintilla* editor);
+        void n_p_end(VikeWin* m_pVike, wxScintilla* editor);
+        void n_P_end(VikeWin* m_pVike, wxScintilla* editor);
 
         /* cut */
-        void n_x(VikeWin* vike, wxScintilla* editor);
-        void n_X(VikeWin* vike, wxScintilla* editor);
+        void n_x(VikeWin* m_pVike, wxScintilla* editor);
+        void n_X(VikeWin* m_pVike, wxScintilla* editor);
+        void n_x_end(VikeWin* m_pVike, wxScintilla* editor);
+        void n_X_end(VikeWin* m_pVike, wxScintilla* editor);
 
-        void n_sf_5(VikeWin* vike, wxScintilla* editor);
+        void n_sf_5(VikeWin* m_pVike, wxScintilla* editor);
 
-        void n_tab(VikeWin* vike, wxScintilla* editor);
-        void n_tabtab(VikeWin* vike, wxScintilla* editor);
-        void n_bktab(VikeWin* vike, wxScintilla* editor);
-        void n_bktabbktab(VikeWin* vike, wxScintilla* editor);
-        void n_search(VikeWin* vike, wxScintilla* editor);
-        void n_ctrl_n(VikeWin* vike, wxScintilla* editor);
-        void n_ctrl_p(VikeWin* vike, wxScintilla* editor);
-        void n_m(VikeWin* vike, wxScintilla* editor);
-        void n_tom(VikeWin* vike, wxScintilla* editor);
-        void n_toma(VikeWin* vike, wxScintilla* editor);
+        void n_tab(VikeWin* m_pVike, wxScintilla* editor);
+        void n_tabtab(VikeWin* m_pVike, wxScintilla* editor);
+        void n_bktab(VikeWin* m_pVike, wxScintilla* editor);
+        void n_bktabbktab(VikeWin* m_pVike, wxScintilla* editor);
+        void n_search(VikeWin* m_pVike, wxScintilla* editor);
+        void n_ctrl_n(VikeWin* m_pVike, wxScintilla* editor);
+        void n_ctrl_p(VikeWin* m_pVike, wxScintilla* editor);
+        void n_m(VikeWin* m_pVike, wxScintilla* editor);
+        void n_tom(VikeWin* m_pVike, wxScintilla* editor);
+        void n_toma(VikeWin* m_pVike, wxScintilla* editor);
 
-        void n_v(VikeWin* vike, wxScintilla* editor);
+        void n_v(VikeWin* m_pVike, wxScintilla* editor);
         //visual mode
-        void v_esc(VikeWin* vike, wxScintilla* editor);
-        void v_h(VikeWin* vike, wxScintilla* editor);
-        void v_j(VikeWin* vike, wxScintilla* editor);
-        void v_k(VikeWin* vike, wxScintilla* editor);
-        void v_l(VikeWin* vike, wxScintilla* editor);
-        void v_e(VikeWin* vike, wxScintilla* editor);
-        void v_b(VikeWin* vike, wxScintilla* editor);
-        void v_sf_6(VikeWin* vike, wxScintilla* editor);
-        void v_0(VikeWin* vike, wxScintilla* editor);
-        void v_sf_4(VikeWin* vike, wxScintilla* editor);
-        void v_tab(VikeWin* vike, wxScintilla* editor);
-        void v_bktab(VikeWin* vike, wxScintilla* editor);
-        void v_y(VikeWin* vike, wxScintilla* editor);
-        void v_d(VikeWin* vike, wxScintilla* editor);
+        void v_esc(VikeWin* m_pVike, wxScintilla* editor);
+        void v_h(VikeWin* m_pVike, wxScintilla* editor);
+        void v_j(VikeWin* m_pVike, wxScintilla* editor);
+        void v_k(VikeWin* m_pVike, wxScintilla* editor);
+        void v_l(VikeWin* m_pVike, wxScintilla* editor);
+        void v_e(VikeWin* m_pVike, wxScintilla* editor);
+        void v_b(VikeWin* m_pVike, wxScintilla* editor);
+        void v_sf_6(VikeWin* m_pVike, wxScintilla* editor);
+        void v_0(VikeWin* m_pVike, wxScintilla* editor);
+        void v_sf_4(VikeWin* m_pVike, wxScintilla* editor);
+        void v_tab(VikeWin* m_pVike, wxScintilla* editor);
+        void v_bktab(VikeWin* m_pVike, wxScintilla* editor);
+        void v_y(VikeWin* m_pVike, wxScintilla* editor);
+        void v_d(VikeWin* m_pVike, wxScintilla* editor);
 
 };
 
