@@ -26,7 +26,7 @@ class cbVike: public wxObject
         //! The event handler for wxKeyEvents.
         void OnChar(VikeWin *m_pVike, wxKeyEvent &event);
         void OnFocus(wxFocusEvent &event);
-        void OnEspecialKey(VikeWin *m_pVike, wxKeyEvent &event);
+        void OnKeyDown(VikeWin *m_pVike, wxKeyEvent &event);
 
         //! Attaches this class to the given window.
         void Attach(wxWindow *p);
@@ -79,7 +79,7 @@ class VikeEvtHandler : public wxEvtHandler
     //! The event handler for wxKeyEvents.
     void OnChar(wxKeyEvent &event);
     void OnFocus(wxFocusEvent &event);
-    void OnEspecialKey(wxKeyEvent &event);
+    void OnKeyDown(wxKeyEvent &event);
 
     public:
 

@@ -15,7 +15,8 @@ Movement
 	w, b
 	gg, (num)G, 0
 	^, $
-    f,F
+    f, F
+	n, N
 
 Insert
 
@@ -33,6 +34,11 @@ Cut and paste
 	(num)yw, (num)yy, (num)y$
 	(num)dw, (num)dd, (num)d$, (num)D
 	p, P
+
+Commands
+	
+	/<something to find>
+	:nohl
 
 
 ## Known Issues

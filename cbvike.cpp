@@ -30,7 +30,7 @@ IMPLEMENT_CLASS(VikeEvtHandler, wxEvtHandler)
 // event table for wxVike
 BEGIN_EVENT_TABLE(VikeEvtHandler, wxEvtHandler)
     // wxEVT_KEY_DOWN received some special key like ESC, BACKSPCE etc.
-    EVT_KEY_DOWN(VikeEvtHandler::OnEspecialKey)
+    EVT_KEY_DOWN(VikeEvtHandler::OnKeyDown)
     // wxEVT_CHAR recevied any ASCII characters
     EVT_CHAR(VikeEvtHandler::OnChar)
     EVT_SET_FOCUS(VikeEvtHandler::OnFocus)
@@ -66,9 +66,9 @@ void VikeEvtHandler::OnChar(wxKeyEvent &p)
     m_pVike->OnChar(m_pVikeWin, p);
 }
 
-void VikeEvtHandler::OnEspecialKey(wxKeyEvent &p)
+void VikeEvtHandler::OnKeyDown(wxKeyEvent &p)
 {
-    m_pVike->OnEspecialKey(m_pVikeWin, p);
+    m_pVike->OnKeyDown(m_pVikeWin, p);
 }
 
 void VikeEvtHandler::OnFocus(wxFocusEvent &p)
@@ -261,22 +261,19 @@ void cbVike::DetachAll()
 
 }//DetachAll
 
-// ----------------------------------------------------------------------------
-//  wxVike OnChar
-// ----------------------------------------------------------------------------
 void cbVike::OnChar(VikeWin *vikeWin, wxKeyEvent &event)
 {
     //begin trap the keycode
-    bool skip = vikeWin->NormalKeyHandler(event);
+    bool skip = vikeWin->OnChar(event);
     if(skip){
         event.Skip();
     }
 }
 
-void cbVike::OnEspecialKey(VikeWin *vikeWin, wxKeyEvent &event)
+void cbVike::OnKeyDown(VikeWin *vikeWin, wxKeyEvent &event)
 {
     //begin trap the keycode
-    bool skip = vikeWin->EspecialKeyHandler(event);
+    bool skip = vikeWin->OnKeyDown(event);
     if(skip){
         event.Skip();
     }
