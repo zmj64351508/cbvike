@@ -24,65 +24,12 @@
 
 #include "cbstyledtextctrl.h"
 #include "vifunc.h"
+#include "cbvike.h"
 #include "debugging.h"
-VikeCmdFunc VikeCmdFunc::m_pInstance;
+
+/* the instance */
 ViFunc ViFunc::gViFunc;
 
-/*******************  VIM Commands Start ***************************/
-int VikeCmdFunc::nohl(int argc, wxString *argv[], VikeWin *vike, wxScintilla *editor)
-{
-    vike->GetHighlight().Hide(editor);
-}
-/*******************  VIM Commands End ***************************/
-
-VikeWin::VikeWin(wxStatusBar *sb)
-    : m_searchCmd('/', m_highlight),
-      m_generalCmd(':', m_highlight),
-      m_pStatusBar(sb)
-      //m_highlight(),
-{
-    LOGIT(_T("new VikeWin created"));
-    //init some params
-    m_iState = VIKE_START;
-    m_iCaretPos = 0;
-    m_iDupNumber = 0;
-    ChangeMode(NORMAL);
-    func = ViFunc::Instance();
-}
-
-bool VikeWin::OnChar(wxKeyEvent &event)
-{
-    bool skip = func->NormalKeyHandler(this, event);
-    if(!skip){
-        if(m_iState == VIKE_END){
-            ClearKeyStatus();
-            SetState(VIKE_START);
-        }else if(m_iState == VIKE_SEARCH || m_iState == VIKE_COMMAND){
-            ClearKeyStatus();
-        }else{
-            AppendKeyStatus(event.GetKeyCode());
-        }
-        UpdateStatusBar();
-    }
-    return skip;
-}
-
-bool VikeWin::OnKeyDown(wxKeyEvent &event)
-{
-    bool skip = func->EspecialKeyHandler(this, event);
-    if(!skip){
-        if(m_iState == VIKE_END){
-            ClearKeyStatus();
-            SetState(VIKE_START);
-        }else if(m_iState == VIKE_SEARCH || m_iState == VIKE_COMMAND){
-            ClearKeyStatus();
-        }else{
-            AppendKeyStatus(event.GetKeyCode());
-        }
-        UpdateStatusBar();
-    }
-    return skip;
-}
 
 ViFunc::ViFunc()
 {
@@ -102,10 +49,6 @@ bool ViFunc::InsertModeSp(VikeWin *m_pVikeWin, int keyCode, wxScintilla *editor)
 bool ViFunc::NormalModeSp(VikeWin *m_pVikeWin, int keyCode, int m_iModifier, wxScintilla *editor)
 {
     bool skip = false;
-//    if(m_pVikeWin->GetState() == VIKE_SEARCH){
-//        skip = SearchSp(m_pVikeWin, keyCode, editor);
-//        return skip;
-//    }
 
     if(keyCode == WXK_ESCAPE){
         n_esc(m_pVikeWin, editor);

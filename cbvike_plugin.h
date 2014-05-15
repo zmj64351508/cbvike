@@ -13,9 +13,7 @@
 class wxWindow;
 class wxLogWindow;
 
-// ----------------------------------------------------------------------------
-//  cbVike class declaration
-// ----------------------------------------------------------------------------
+/*! The plugin, handling the general plugin action like attaching, releasing, etc. */
 class VikePlugin : public cbPlugin
 {
 	public:

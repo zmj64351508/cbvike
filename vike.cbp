@@ -66,6 +66,8 @@
 		<Unit filename="cbvike_plugin.h" />
 		<Unit filename="debugging.h" />
 		<Unit filename="manifest.xml" />
+		<Unit filename="vicmd.cpp" />
+		<Unit filename="vicmd.h" />
 		<Unit filename="vifunc.cpp" />
 		<Unit filename="vifunc.h" />
 		<Extensions>

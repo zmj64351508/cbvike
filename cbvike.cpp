@@ -27,7 +27,8 @@
 IMPLEMENT_CLASS(cbVike, wxObject)
 IMPLEMENT_CLASS(VikeEvtHandler, wxEvtHandler)
 
-// event table for wxVike
+/******************* VikeEvtHandler start ***********************/
+// event table for cbVike
 BEGIN_EVENT_TABLE(VikeEvtHandler, wxEvtHandler)
     // wxEVT_KEY_DOWN received some special key like ESC, BACKSPCE etc.
     EVT_KEY_DOWN(VikeEvtHandler::OnKeyDown)
@@ -45,22 +46,25 @@ BEGIN_EVENT_TABLE(VikeEvtHandler, wxEvtHandler)
 #endif
 #endif
 #endif
-
 END_EVENT_TABLE()
-
-#if !wxCHECK_VERSION(2, 5, 1)
-
-    // with wx previous to 2.5 we need to use wxWindow::Node* instead
-    // of wxWindow::compatibility_iterator (thanks to Sebastien Berthet for this)
-#define compatibility_iterator			Node*
-#endif
 
 // window names allowed for which vike may attach()
 wxArrayString cbVike::usableWindows;                    //+v0.4.4
 
-// ----------------------------------------------------------------------------
-// wxBinderEvtHandler
-// ----------------------------------------------------------------------------
+VikeEvtHandler::VikeEvtHandler(cbVike *vike, wxWindow *tg)
+    : m_pVike(vike), m_pTarget(tg)
+{
+    m_pVikeWin = new VikeWin(vike->GetStatusBar());
+    m_pVikeWin->SetStartCaret((wxScintilla*)tg);
+    m_pTarget->PushEventHandler(this);
+}
+
+VikeEvtHandler::~VikeEvtHandler()
+{
+    if ( m_pTarget ) m_pTarget->RemoveEventHandler(this);
+    if ( m_pVikeWin ) delete m_pVikeWin;
+}
+
 void VikeEvtHandler::OnChar(wxKeyEvent &p)
 {
     m_pVike->OnChar(m_pVikeWin, p);
@@ -79,7 +83,9 @@ void VikeEvtHandler::OnFocus(wxFocusEvent &p)
     //((wxWindow*)p.GetWindow())->SetFocus();
     p.Skip();
 }
+/******************* VikeEvtHandler end ***********************/
 
+/******************* cbVike start *****************************/
 void cbVike::CreateStatusBar()
 {
     m_pStatusBar = new wxStatusBar(Manager::Get()->GetAppWindow(),  wxID_ANY, wxSB_NORMAL, wxString((wxChar*)"cbVike"));
@@ -110,9 +116,6 @@ void cbVike::HideStatusBar()
     Manager::Get()->ProcessEvent(evt);
 }
 
-// ----------------------------------------------------------------------------
-//  wxVike Attach
-// ----------------------------------------------------------------------------
 void cbVike::Attach(wxWindow *p)
 {
     //LOGIT( _T("wxVike: Attach for %p and if crash??"), p );
@@ -146,9 +149,6 @@ void cbVike::Attach(wxWindow *p)
     m_arrHandlers.Add((void*)h);
 }
 
-// ----------------------------------------------------------------------------
-//  wxVike FindHandlerIdxFor
-// ----------------------------------------------------------------------------
 int cbVike::FindHandlerIdxFor(wxWindow *p) const
 {
 	for (int i=0; i<(int)m_arrHandlers.GetCount(); i++)
@@ -174,9 +174,7 @@ void cbVike::Detach(wxWindow *p, bool deleteEvtHandler)
 	if (deleteEvtHandler) delete toremove;
 }
 
-// ----------------------------------------------------------------------------
 wxWindow* cbVike::FindWindowRecursively(const wxWindow* parent, const wxWindow* handle)
-// ----------------------------------------------------------------------------
 {//+v0.4.4
     if ( parent )
     {
@@ -201,9 +199,7 @@ wxWindow* cbVike::FindWindowRecursively(const wxWindow* parent, const wxWindow* 
     return NULL;
 }
 
-// ----------------------------------------------------------------------------
 wxWindow* cbVike::winExists(wxWindow *parent)
-// ----------------------------------------------------------------------------
 { //+v0.4.4
 
     if ( !parent )
@@ -226,9 +222,6 @@ wxWindow* cbVike::winExists(wxWindow *parent)
     return NULL;
 }
 
-// ----------------------------------------------------------------------------
-//  wxVike DetachAll
-// ----------------------------------------------------------------------------
 void cbVike::DetachAll()
 {
     wxWindow* pwin;
@@ -285,4 +278,123 @@ void cbVike::OnFocus(wxFocusEvent &event)
     //((wxScintilla*)event.GetEventObject())->SetCaretStyle(wxSCI_CARETSTYLE_LINE);
     LOGIT(_T("set line"));
 }
-// ----------------------------------------------------------------------------
+/******************* cbVike end *****************************/
+
+/******************* VikeWin start **************************/
+VikeWin::VikeWin(wxStatusBar *sb)
+    : m_searchCmd('/', m_highlight),
+      m_generalCmd(':', m_highlight),
+      m_pStatusBar(sb)
+      //m_highlight(),
+{
+    LOGIT(_T("new VikeWin created"));
+    //init some params
+    m_iState = VIKE_START;
+    m_iCaretPos = 0;
+    m_iDupNumber = 0;
+    ChangeMode(NORMAL);
+    func = ViFunc::Instance();
+}
+
+bool VikeWin::OnChar(wxKeyEvent &event)
+{
+    bool skip = func->NormalKeyHandler(this, event);
+    if(!skip){
+        if(m_iState == VIKE_END){
+            ClearKeyStatus();
+            SetState(VIKE_START);
+        }else if(m_iState == VIKE_SEARCH || m_iState == VIKE_COMMAND){
+            ClearKeyStatus();
+        }else{
+            AppendKeyStatus(event.GetKeyCode());
+        }
+        UpdateStatusBar();
+    }
+    return skip;
+}
+
+bool VikeWin::OnKeyDown(wxKeyEvent &event)
+{
+    bool skip = func->EspecialKeyHandler(this, event);
+    if(!skip){
+        if(m_iState == VIKE_END){
+            ClearKeyStatus();
+            SetState(VIKE_START);
+        }else if(m_iState == VIKE_SEARCH || m_iState == VIKE_COMMAND){
+            ClearKeyStatus();
+        }else{
+            AppendKeyStatus(event.GetKeyCode());
+        }
+        UpdateStatusBar();
+    }
+    return skip;
+}
+
+/* set caret when startup */
+void VikeWin::SetStartCaret(wxScintilla* editor) const
+{
+    editor->SetCaretStyle(wxSCI_CARETSTYLE_BLOCK);
+}
+
+void VikeWin::Finish(wxScintilla *editor)
+{
+    m_iDupNumber = 0;
+    m_iState = VIKE_END;
+    m_iCaretPos = editor->GetCurrentPos();
+}
+
+void VikeWin::ChangeMode(VikeMode new_mode)
+{
+    m_iMode = new_mode;
+    UpdateStatusBar();
+}
+
+int VikeWin::GetUndoPos()                    { return m_iCaretPos; }
+int VikeWin::GetMode() const                 { return m_iMode; }
+void VikeWin::AppendKeyStatus(int key_code)  { m_arrKey.Add(key_code); }
+void VikeWin::ClearKeyStatus()               { m_arrKey.Clear(); }
+void VikeWin::SetState(VikeState new_state)  { m_iState = new_state; }
+int VikeWin::GetState()                      { return m_iState; }
+void VikeWin::ShiftAddDupNumber(int num)     { m_iDupNumber = m_iDupNumber * 10 + num; }
+bool VikeWin::IsDup()                        { return m_iDupNumber != 0; }
+int VikeWin::GetDupNumber()                  { return m_iDupNumber == 0 ? 1 : m_iDupNumber; }
+VikeSearchCmd &VikeWin::GetSearchCmd()       { return m_searchCmd; }
+VikeGeneralCmd &VikeWin::GetGeneralCmd()     { return m_generalCmd; }
+VikeHighlight &VikeWin::GetHighlight()       { return m_highlight; }
+
+void VikeWin::UpdateStatusBar()
+{
+    if(m_iMode == NORMAL && m_iState == VIKE_SEARCH){
+        m_pStatusBar->SetStatusText(m_searchCmd.GetCommandWithPrefix(), STATUS_COMMAND);
+        m_pStatusBar->SetStatusText(_T(""), STATUS_KEY);
+    }else if(m_iMode == NORMAL && m_iState == VIKE_COMMAND){
+        m_pStatusBar->SetStatusText(m_generalCmd.GetCommandWithPrefix(), STATUS_COMMAND);
+        m_pStatusBar->SetStatusText(_T(""), STATUS_KEY);
+    }else{
+        const wxChar *mode_txt = NULL;
+        switch(m_iMode){
+        case NORMAL:
+            mode_txt = _T("-- NORMAL --"); break;
+        case INSERT:
+            mode_txt = _T("-- INSERT --"); break;
+        case VISUAL:
+            mode_txt = _T("-- VISIUAL --"); break;
+        default:
+            break;
+        }
+        m_pStatusBar->SetStatusText(mode_txt, STATUS_COMMAND);
+
+        if(m_arrKey.IsEmpty()){
+            m_pStatusBar->SetStatusText(_T(""), STATUS_KEY);
+        }else{
+            m_pStatusBar->PushStatusText((wxChar)m_arrKey.Last(), STATUS_KEY);
+        }
+    }
+}
+
+void VikeWin::ClearCmd()
+{
+    m_searchCmd.Clear();
+    m_generalCmd.Clear();
+}
+/******************* VikeWin end ****************************/

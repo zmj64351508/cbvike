@@ -6,10 +6,12 @@
 #endif
 
 #include "debugging.h"
+#include "vicmd.h"
+#include "cbstyledtextctrl.h"
 
+#include <wx/statusbr.h>
 #include <wx/hashmap.h>
 
-#define VIKE_INDIC_START 20
 
 #define UPPER_CODE(code) (code-'a'+'A')
 #define LOWER_CODE(code) (code-'A'+'a')
@@ -19,382 +21,7 @@
 #define GET_KEYCODE(code) (code & 0xff)
 #define BOOKMARK_MARKER        2
 
-enum VikeMode{ INSERT, NORMAL, VISUAL };
-enum VikeState {
-    VIKE_START,
-    VIKE_SEARCH,        // /
-    VIKE_COMMAND,       // :
-    VIKE_REPLACE,       // r
-    VIKE_FIND_FORWARD,  // f
-    VIKE_FIND_BACKWORD, // F
-    VIKE_CHANGE,        // c
-    VIKE_DELETE,        // d
-    VIKE_YANK,          // y
-    VIKE_EXTRA,         // g
-    VIKE_END,
-};
-
-enum VikeStatusBarField{
-    STATUS_COMMAND,
-    STATUS_KEY,
-    STATUS_FIELD_NUM,
-};
-
-class ViFunc;
-
-class VikeHighlight{
-    public:
-        VikeHighlight(): m_iIndicator(VIKE_INDIC_START)
-        {
-            m_colour = wxColor(255, 0, 0);
-        }
-
-        void Hide(wxScintilla *editor)
-        {
-            editor->SetIndicatorCurrent(m_iIndicator);
-            editor->IndicatorClearRange(0, editor->GetLength());
-        }
-
-        void Show(wxScintilla *editor)
-        {
-            editor->SetIndicatorCurrent(m_iIndicator);
-            editor->IndicatorSetStyle(m_iIndicator, wxSCI_INDIC_HIGHLIGHT);
-            editor->IndicatorSetForeground(m_iIndicator, m_colour);
-        }
-
-        void SetColour(wxColour colour)
-        {
-            m_colour = colour;
-        }
-
-        void SetPos(int pos, int len, wxScintilla *editor)
-        {
-            editor->SetIndicatorCurrent(m_iIndicator);
-            editor->IndicatorFillRange(pos, len);
-        }
-
-    private:
-        int m_iIndicator;
-        wxColour m_colour;
-};
-
-class VikeCommand{
-    public:
-        //VikeCommand(void){}
-        VikeCommand(wxChar prefix, VikeHighlight &hl)
-        : m_highlight(hl),
-          m_cPrefix(prefix)
-        {
-            Clear();
-        }
-
-        void AppendCommand(wxChar cmdChar){ m_sCommand.Append(cmdChar); }
-        void BackCommand(){ m_sCommand.RemoveLast(); }
-        bool IsEmpty() { return m_sCommand.IsEmpty(); }
-        wxChar GetPrefix() { return m_cPrefix; }
-
-        wxString GetCommand(){
-            this->SetPrefix();
-            return m_sCommand.Mid(1);
-        }
-
-        wxString &GetCommandWithPrefix(){
-            this->SetPrefix();
-            return m_sCommand;
-        }
-
-        void Clear(){
-            m_sCommand.Clear();
-            m_sCommand.Prepend(m_cPrefix);
-        }
-
-        void Store(){}
-
-    protected:
-        VikeHighlight& m_highlight;
-
-    private:
-        void SetPrefix(){
-            if(m_sCommand.Length() == 0 ||
-               (m_sCommand.Length() > 0 && m_sCommand[0] != m_cPrefix))
-            {
-                m_sCommand.Prepend(m_cPrefix);
-            }
-        }
-
-        wxChar m_cPrefix;
-        wxString m_sCommand;
-};
-
-class VikeSearchCmd: public VikeCommand{
-    public:
-        //VikeSearchCmd(void) :VikeCommand(){}
-        VikeSearchCmd(wxChar prefix, VikeHighlight &hl)
-            : VikeCommand(prefix, hl),
-              m_iLast(0),
-              m_iMaxIndicator(VIKE_INDIC_START)
-        {}
-
-        // main search routine
-        void doSearch(wxScintilla *editor){
-            int curPos = editor->GetCurrentPos();
-            bool found = StoreFind(0, editor->GetLength(), editor);
-            if(found){
-                editor->GotoPos(NextPos(curPos));
-            }
-        }
-
-        int NextPos(int curPos)
-        {
-            return NeighborPos(curPos, true);
-        }
-
-        int PrevPos(int curPos)
-        {
-            return NeighborPos(curPos, false);
-        }
-
-    private:
-        // Store all the found position
-        bool StoreFind(int start, int end, wxScintilla *editor)
-        {
-            // Clear
-            m_highlight.Hide(editor);
-
-            bool found = false;
-            int len;
-            ClearState();
-            int pos = start;
-            do{
-                pos = editor->FindText(pos + 1, end, this->GetCommand(), wxSCI_FIND_REGEXP|wxSCI_FIND_MATCHCASE, &len);
-                if(pos >= 0){
-                    found = true;
-                    m_arrFind.push_back(pos);
-                    // highlight
-                    m_highlight.SetPos(pos, len, editor);
-                }
-                //LOGIT(_T("pos is %d"), pos);
-            }while(pos >= 0);
-            m_highlight.Show(editor);
-            LOGIT(_T("find string length: %d"), len);
-            return found;
-        }
-
-        int NeighborPos(int curPos, bool lookForward)
-        {
-            if(m_arrFind.GetCount() == 0){
-                return curPos;
-            }
-
-            // Get next or previous position directly through m_iLast
-            int step = lookForward ? 1 : -1;
-            if(m_iLast == curPos){
-                m_iLast = (m_iLast + step) % m_arrFind.GetCount();
-                return m_arrFind[m_iLast];
-            }
-
-            // Find next or previous position by searching in m_arrFind
-            int pos = curPos;
-            if(lookForward){
-                 for(int i = 0; i < m_arrFind.GetCount(); i++){
-                    if(m_arrFind[i] > curPos){
-                        pos = m_arrFind[i];
-                        m_iLast = i;
-                        break;
-                    }
-                }
-            }else{
-                for(int i = m_arrFind.GetCount() - 1; i >= 0; i--){
-                    if(m_arrFind[i] < curPos){
-                        pos = m_arrFind[i];
-                        m_iLast = i;
-                        break;
-                    }
-                }
-            }
-            // nothing find after curPos
-            if(pos == curPos){
-                pos = lookForward ? m_arrFind[0] : m_arrFind.Last();
-            }
-            return pos;
-        }
-        void ClearState()
-        {
-            m_iFindLen = 0;
-            m_iLast = 0;
-            m_iMaxIndicator = VIKE_INDIC_START;
-            m_arrFind.Clear();
-        }
-
-        int m_iLast;
-        int m_iFindLen;
-        int m_iMaxIndicator;
-        wxArrayInt m_arrFind;
-};
-
-class VikeWin;
-typedef int (*VikeCmdHandler)(int argc, wxString *argv[], VikeWin *vike, wxScintilla *editor);
-WX_DECLARE_STRING_HASH_MAP( VikeCmdHandler, VikeCmdMap);
-
-class VikeCmdFunc{
-    private:
-        VikeCmdFunc()
-        {
-            m_cmdMap[_T("nohl")] = &nohl;
-        };
-        VikeCmdFunc(const VikeCmdFunc&){};
-        VikeCmdFunc& operator=(const VikeCmdFunc&);
-        static VikeCmdFunc m_pInstance;
-        VikeCmdMap m_cmdMap;
-
-        static int nohl(int argc, wxString *argv[], VikeWin *vike, wxScintilla *editor);
-
-    public:
-        static VikeCmdFunc* Instance()
-        {
-            return &m_pInstance;
-        }
-
-        VikeCmdHandler GetHandler(const wxString &cmd)
-        {
-            return m_cmdMap[cmd];
-        }
-
-
-};
-
-class VikeGeneralCmd:public VikeCommand{
-    public:
-        VikeGeneralCmd(wxChar prefix, VikeHighlight &hl)
-            :VikeCommand(prefix, hl)
-        {
-            m_pCmdFunc = VikeCmdFunc::Instance();
-        }
-
-        void ParseCommand(VikeWin *vike, wxScintilla *editor)
-        {
-            wxString cmd = GetCommand();
-            int len = 10;
-            wxString **argv = new wxString*[len];
-            VikeCmdHandler handler = m_pCmdFunc->GetHandler(cmd);
-            if(handler){
-                handler(1, argv, vike, editor);
-            }
-        }
-
-    private:
-        VikeCmdFunc* m_pCmdFunc;
-
-};
-
-/* Every window has an instance of VikeWin */
-class VikeWin{
-    public:
-        VikeWin(wxStatusBar *sb);
-
-        bool OnChar(wxKeyEvent &event);
-        bool OnKeyDown(wxKeyEvent &event);
-
-        /* set caret when startup */
-        void SetStartCaret(wxScintilla* editor) const
-        {
-            editor->SetCaretStyle(wxSCI_CARETSTYLE_BLOCK);
-        }
-
-        void Finish(wxScintilla *editor)
-        {
-            m_iDupNumber = 0;
-            m_iState = VIKE_END;
-            m_iCaretPos = editor->GetCurrentPos();
-        }
-
-        int GetUndoPos()            { return m_iCaretPos; }
-
-        void SetModifier(int key)   { m_iModifier = key; }
-        int GetMonifier() const     { return m_iModifier; }
-
-        void ChangeMode(VikeMode new_mode)
-        {
-            m_iMode = new_mode;
-            UpdateStatusBar();
-        }
-
-        int GetMode() const                 { return m_iMode; }
-
-        void AppendKeyStatus(int key_code)  { m_arrKey.Add(key_code); }
-        void ClearKeyStatus()               { m_arrKey.Clear(); }
-
-        void UpdateStatusBar(){
-            if(m_iMode == NORMAL && m_iState == VIKE_SEARCH){
-                m_pStatusBar->SetStatusText(m_searchCmd.GetCommandWithPrefix(), STATUS_COMMAND);
-                m_pStatusBar->SetStatusText(_T(""), STATUS_KEY);
-            }else if(m_iMode == NORMAL && m_iState == VIKE_COMMAND){
-                m_pStatusBar->SetStatusText(m_generalCmd.GetCommandWithPrefix(), STATUS_COMMAND);
-                m_pStatusBar->SetStatusText(_T(""), STATUS_KEY);
-            }else{
-                const wxChar *mode_txt = NULL;
-                switch(m_iMode){
-                case NORMAL:
-                    mode_txt = _T("-- NORMAL --"); break;
-                case INSERT:
-                    mode_txt = _T("-- INSERT --"); break;
-                case VISUAL:
-                    mode_txt = _T("-- VISIUAL --"); break;
-                default:
-                    break;
-                }
-                m_pStatusBar->SetStatusText(mode_txt, STATUS_COMMAND);
-
-                if(m_arrKey.IsEmpty()){
-                    m_pStatusBar->SetStatusText(_T(""), STATUS_KEY);
-                }else{
-                    m_pStatusBar->PushStatusText((wxChar)m_arrKey.Last(), STATUS_KEY);
-                }
-            }
-        }
-
-        void SetState(VikeState new_state)  { m_iState = new_state; }
-        int GetState()                      { return m_iState; }
-
-        void ShiftAddDupNumber(int num)     { m_iDupNumber = m_iDupNumber * 10 + num; }
-        bool IsDup()                        { return m_iDupNumber != 0; }
-        int GetDupNumber()                  { return m_iDupNumber == 0 ? 1 : m_iDupNumber; }
-
-        VikeSearchCmd &GetSearchCmd()       { return m_searchCmd; }
-        VikeGeneralCmd &GetGeneralCmd()     { return m_generalCmd; }
-        VikeHighlight &GetHighlight()       { return m_highlight; }
-        void ClearCmd()
-        {
-            m_searchCmd.Clear();
-            //m_generalCmd.Clear();
-        }
-        // the executing function
-        ViFunc *func;
-        // current input character
-        char Char;
-
-    private:
-        //current edit mode
-        VikeMode m_iMode;
-        //current state
-        VikeState m_iState;
-        // Duplicate number
-        wxStatusBar *m_pStatusBar;
-
-        wxArrayInt m_arrKey;
-
-        VikeSearchCmd m_searchCmd;
-        VikeGeneralCmd m_generalCmd;
-
-        VikeHighlight m_highlight;
-
-        int m_iDupNumber;
-        int m_iModifier;
-        int m_iCaretPos;
-};
-
-
-/* ViFunc has only one global instance called by VikeWin */
+/*! ViFunc has only one global instance called by VikeWin */
 class ViFunc
 {
     public:
@@ -407,39 +34,35 @@ class ViFunc
         bool EspecialKeyHandler(VikeWin *curVike, wxKeyEvent &event);
 
     private:
+        /* not allow construct */
         ViFunc();
-        //not allow construct
         ViFunc(const ViFunc&);
         ViFunc& operator=(const ViFunc&);
 
-        //singleton instance
+        /* singleton instance */
         static ViFunc gViFunc;
 
         /* temperoray hack for cut line should be a global flag for
            all the open editors */
-        // cut line or cut word
+        /* cut line or cut word */
         bool m_bLineCuted;
 
-        wxString getActiveFile()
-        {
-            cbEditor *ed = Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor();
-            if (!ed)
-            {
-                return wxT("");
-            }
-
-            return ed->GetFilename();
-        }
-
-
+        /* Insert mode special key handler */
         bool InsertModeSp(VikeWin *m_pVikeWin, int keyCode, wxScintilla *editor);
+
+        /* Normal mode special key handler */
         bool NormalModeSp(VikeWin *m_pVikeWin, int keyCode, int m_iModifier, wxScintilla *editor);
+
+        /* Normal mode normal key handler */
         bool NormalMode(VikeWin *m_pVikeWin, int keyCode, int m_iModifier, wxScintilla *editor);
-        bool SearchSp(VikeWin *vike, int keyCode, wxScintilla *editor);
+
+        /* Handles the commands start with '/' */
         void Search(VikeWin *vike, int keyCode, wxScintilla *editor);
+
+        /* Handles the commands start with ':' */
         void Command(VikeWin *vike, int keyCode, wxScintilla *editor);
 
-
+        /* Here are all the general functions for different keys */
         //insert mode
         void i_esc(VikeWin* m_pVike, wxScintilla* editor);
 
@@ -447,7 +70,6 @@ class ViFunc
         void n_esc(VikeWin* m_pVike, wxScintilla* editor);
         void n_enter(VikeWin* m_pVike, wxScintilla* editor);
         void n_backspace(VikeWin* m_pVike, wxScintilla* editor);
-        //void n_delete(VikeWin *vike, wxScintilla* editor);
         void n_number(VikeWin* m_pVike, int number, wxScintilla* editor);
         void n_0(VikeWin* m_pVike, wxScintilla* editor);
         void n_0_end(VikeWin* m_pVike, wxScintilla* editor);
@@ -583,7 +205,5 @@ class ViFunc
         void v_d(VikeWin* m_pVike, wxScintilla* editor);
 
 };
-
-
 
 #endif  //__VIFUNC_H__
