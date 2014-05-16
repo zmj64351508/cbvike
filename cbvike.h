@@ -21,6 +21,7 @@ enum VikeState {
     VIKE_FIND_FORWARD,  // f
     VIKE_FIND_BACKWORD, // F
     VIKE_CHANGE,        // c
+    VIKE_CHANGE_IN,     // ci
     VIKE_DELETE,        // d
     VIKE_YANK,          // y
     VIKE_EXTRA,         // g
@@ -107,12 +108,12 @@ class cbVike: public wxObject
 };//cbVike
 
 /*! Bind cbVike to window */
-class VikeEvtHandler : public wxEvtHandler
+class VikeEvtBinder : public wxEvtHandler
 {
     public:
-        VikeEvtHandler(cbVike *vike, wxWindow *tg);
+        VikeEvtBinder(cbVike *vike, wxWindow *tg);
 
-        virtual ~VikeEvtHandler();
+        virtual ~VikeEvtBinder();
 
         /* Returns TRUE if this event handler is attached to the given window. */
         bool IsAttachedTo(wxWindow *p) { return p == m_pTarget; }
@@ -136,7 +137,7 @@ class VikeEvtHandler : public wxEvtHandler
         wxWindow *m_pTarget;    // the windows bind to the plugin
         VikeWin *m_pVikeWin;    // store state for each window
 
-        DECLARE_CLASS(VikeEvtHandler)
+        DECLARE_CLASS(VikeEvtBinder)
         DECLARE_EVENT_TABLE()
 };
 

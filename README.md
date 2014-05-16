@@ -12,33 +12,60 @@ It can emulate the basic functions of VIM. Tested functions are as follow:
 Movement
 
 	h, j, k, l
-	w, b
-	gg, (num)G, 0
-	^, $
-    f, F
-	n, N
+	w	         -- goto next word
+    b            -- goto previous word
+	gg           -- goto start of file
+	<num>G       -- goto line(num)
+	G            -- goto end of file
+	0            -- visiable line start
+	^            -- line start
+	$            -- line end
+    f<character> -- find next character
+	F<character> -- find previous character
+	n            -- next match case
+	N            -- previous match case
 
 Insert
 
-	i, I, a, A, o, O, ESC
+	ESC
+	i            -- insert at current position
+	I            -- insert at line start
+	a            -- append at current position
+	A            -- append at line end
+	o            -- new line after current line
+	O            -- new line above current line
 
 Editing
-
-	r(work properly with ASCII)
-	(num)cw, (num)cc, (num)c$ 
-	u, Ctrl-r
-
+	
+	(num)cw      -- change (num) word(s)
+	(num)cc,     -- change (num) line(s)
+	(num)c$      -- change to line end
+	r<character> -- replace current position by character
+	u            -- undo
+	Ctrl-r       -- redo
+	
 Cut and paste
 
-	x, X
-	(num)yw, (num)yy, (num)y$
-	(num)dw, (num)dd, (num)d$, (num)D
-	p, P
+	x -- delete
+	X -- backspace
+	(num)yw      -- yank (num) word(s)
+	(num)yy      -- yank (num) line(s)
+	(num)y$      -- yank to line end
+	(num)dw      -- delete (num) word(s)
+	(num)dd      -- delete (num) line(s)
+	(num)d$      -- delete to line end
+	(num)D       -- the same as d$
+	p            -- paste below
+	P            -- paste above
+
+Bracket related
+
+	ci<bracket>  -- change in bracket -- such as ci(, ci), ci{, ci}, ci<, ci>, ci[, ci]
 
 Commands
 	
 	/<something to find>
-	:nohl
+	:nohl        -- no hightlight
 
 
 ## Known Issues

@@ -99,6 +99,8 @@ bool ViFunc::NormalMode(VikeWin *m_pVikeWin, int keyCode, int m_iModifier, wxSci
         n_f_any(m_pVikeWin, keyCode, editor); return skip;
     case VIKE_FIND_BACKWORD:
         n_F_any(m_pVikeWin, keyCode, editor); return skip;
+    case VIKE_CHANGE_IN:
+        n_ci_some(m_pVikeWin, keyCode, editor); return skip;
     default:
         break;
     }
@@ -415,7 +417,20 @@ void ViFunc::n_l(VikeWin *m_pVike, wxScintilla* editor)
 }
 void ViFunc::n_i(VikeWin *m_pVike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(m_pVike, editor, n_i_end);
+    //SINGLE_COMMAND(m_pVike, editor, n_i_end);
+    switch(m_pVike->GetState()){
+    case VIKE_START:
+        n_i_end(m_pVike, editor);
+        m_pVike->SetState(VIKE_END);
+        break;
+    case VIKE_CHANGE:
+        n_ci(m_pVike, editor);
+        m_pVike->SetState(VIKE_CHANGE_IN);
+        break;
+    default:
+        m_pVike->SetState(VIKE_END);
+        break;
+    }
 }
 void ViFunc::n_I(VikeWin *m_pVike, wxScintilla* editor)
 {
@@ -904,6 +919,146 @@ void ViFunc::n_cc(VikeWin *m_pVike, wxScintilla* editor)
     n_O(m_pVike, editor);
     m_pVike->Finish(editor);
 }
+void ViFunc::n_ci(VikeWin *m_pVike, wxScintilla* editor)
+{
+}
+
+static bool IsBracketStart(wxChar c)
+{
+    if(c == '(' || c == '{' || c == '[' || c == '<'){
+        return true;
+    }else{
+        return false;
+    }
+}
+
+static bool IsBracketEnd(wxChar c)
+{
+    if(c == ')' || c == '}' || c == ']' || c == '>'){
+        return true;
+    }else{
+        return false;
+    }
+}
+
+static wxChar BracketPair(wxChar c)
+{
+    wxChar pair = -1;
+    switch(c){
+    /* bracket start to end*/
+    case '(':
+        pair = ')'; break;
+    case '{':
+        pair = '}'; break;
+    case '[':
+        pair = ']'; break;
+    case '<':
+        pair = '>'; break;
+    /* bracket end to start */
+    case ')':
+        pair = '('; break;
+    case '}':
+        pair = '{'; break;
+    case ']':
+        pair = '['; break;
+    case '>':
+        pair = '<'; break;
+    default:
+        pair = -1;
+        break;
+    }
+    return pair;
+}
+
+int ViFunc::FindUnpairBracket(wxChar bracketStart, bool lookForward, wxScintilla *editor)
+{
+    /* NOTE: We don't check the bracketStart. So make sure bracketStart is ( or < or { , etc. */
+    wxChar bracketEnd = BracketPair(bracketStart);
+    wxChar curChar;
+    int unMatch = 0;
+
+    /* Check current character first */
+    int curPos = editor->GetCurrentPos();
+    curChar = editor->GetCharAt(curPos);
+    if(!lookForward && curChar == bracketStart){
+        return curPos;
+    }else if(lookForward && curChar == bracketEnd){
+        return curPos;
+    }
+
+    /* Lookforward or lookbackward to find the first unpair bracket */
+    for(lookForward ? curPos = editor->GetCurrentPos() + 1 : curPos = editor->GetCurrentPos() - 1;
+        lookForward ? curPos < editor->GetLength()        : curPos >= 0;
+        lookForward ? curPos++                            : curPos--)
+    {
+        curChar = editor->GetCharAt(curPos);
+        if(lookForward ? curChar == bracketEnd : curChar == bracketStart){
+            unMatch += 1;
+        }else if(lookForward ? curChar == bracketStart : curChar == bracketEnd){
+            unMatch -= 1;
+        }
+        if(unMatch > 0){
+            break;
+        }
+    }
+
+    /* not found */
+    if(curPos == editor->GetLength() || curPos < 0){
+        curPos = -1;
+    }
+
+    return curPos;
+}
+
+int ViFunc::SelectBracket(int keyCode, wxScintilla* editor)
+{
+    /* not handle any character that is not bracket */
+    bool isStart = IsBracketStart(keyCode);
+    bool isEnd = IsBracketEnd(keyCode);
+    if(!isStart && !isEnd){
+        return -1;
+    }
+
+    wxChar bracketStart;
+    if(isStart){
+        bracketStart = (wxChar)keyCode;
+    }else{
+        bracketStart = BracketPair(keyCode);
+    }
+
+    int start = FindUnpairBracket(bracketStart, false, editor);
+    int end = FindUnpairBracket(bracketStart, true, editor);
+
+    if(start >= 0 && end >= 0){
+        /* start with the next postion of the bracket start */
+        start += 1;
+        editor->SetSelectionStart(start);
+        editor->SetSelectionEnd(end);
+        return end - start;
+    }
+
+    return -1;
+}
+
+void ViFunc::n_ci_some(VikeWin *m_pVike, int keyCode, wxScintilla* editor)
+{
+    editor->BeginUndoAction();
+    int curPos = editor->GetCurrentPos();
+    int len = SelectBracket(keyCode, editor);
+    if(len >= 0){
+        /* TODO: Is there any way don't need to check length is 0 or not? */
+        if(len > 0){
+            editor->DeleteBack();
+        }
+        n_i_end(m_pVike, editor);
+    }else{
+        /* if not find anything return to origin position */
+        editor->GotoPos(curPos);
+    }
+    editor->EndUndoAction();
+    m_pVike->Finish(editor);
+}
+
 void ViFunc::n_r(VikeWin *m_pVike, wxScintilla* editor)
 {
     switch(m_pVike->GetState()){

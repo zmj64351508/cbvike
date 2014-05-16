@@ -25,16 +25,16 @@
 #include "debugging.h"
 
 IMPLEMENT_CLASS(cbVike, wxObject)
-IMPLEMENT_CLASS(VikeEvtHandler, wxEvtHandler)
+IMPLEMENT_CLASS(VikeEvtBinder, wxEvtHandler)
 
 /******************* VikeEvtHandler start ***********************/
 // event table for cbVike
-BEGIN_EVENT_TABLE(VikeEvtHandler, wxEvtHandler)
+BEGIN_EVENT_TABLE(VikeEvtBinder, wxEvtHandler)
     // wxEVT_KEY_DOWN received some special key like ESC, BACKSPCE etc.
-    EVT_KEY_DOWN(VikeEvtHandler::OnKeyDown)
+    EVT_KEY_DOWN(VikeEvtBinder::OnKeyDown)
     // wxEVT_CHAR recevied any ASCII characters
-    EVT_CHAR(VikeEvtHandler::OnChar)
-    EVT_SET_FOCUS(VikeEvtHandler::OnFocus)
+    EVT_CHAR(VikeEvtBinder::OnChar)
+    EVT_SET_FOCUS(VikeEvtBinder::OnFocus)
 
 #if defined( __WXMSW__	)		// supported only on Win32
 #if wxUSE_HOTKEY                // enabled?
@@ -42,7 +42,7 @@ BEGIN_EVENT_TABLE(VikeEvtHandler, wxEvtHandler)
 
     // I don't think this is needed because wxEVT_HOTKEY are generated
     // only in some special cases...
-    EVT_HOTKEY(wxID_ANY, VikeEvtHandler::OnChar)
+    EVT_HOTKEY(wxID_ANY, VikeEvtBinder::OnChar)
 #endif
 #endif
 #endif
@@ -51,7 +51,7 @@ END_EVENT_TABLE()
 // window names allowed for which vike may attach()
 wxArrayString cbVike::usableWindows;                    //+v0.4.4
 
-VikeEvtHandler::VikeEvtHandler(cbVike *vike, wxWindow *tg)
+VikeEvtBinder::VikeEvtBinder(cbVike *vike, wxWindow *tg)
     : m_pVike(vike), m_pTarget(tg)
 {
     m_pVikeWin = new VikeWin(vike->GetStatusBar());
@@ -59,23 +59,23 @@ VikeEvtHandler::VikeEvtHandler(cbVike *vike, wxWindow *tg)
     m_pTarget->PushEventHandler(this);
 }
 
-VikeEvtHandler::~VikeEvtHandler()
+VikeEvtBinder::~VikeEvtBinder()
 {
     if ( m_pTarget ) m_pTarget->RemoveEventHandler(this);
     if ( m_pVikeWin ) delete m_pVikeWin;
 }
 
-void VikeEvtHandler::OnChar(wxKeyEvent &p)
+void VikeEvtBinder::OnChar(wxKeyEvent &p)
 {
     m_pVike->OnChar(m_pVikeWin, p);
 }
 
-void VikeEvtHandler::OnKeyDown(wxKeyEvent &p)
+void VikeEvtBinder::OnKeyDown(wxKeyEvent &p)
 {
     m_pVike->OnKeyDown(m_pVikeWin, p);
 }
 
-void VikeEvtHandler::OnFocus(wxFocusEvent &p)
+void VikeEvtBinder::OnFocus(wxFocusEvent &p)
 {
     LOGIT(_("on focus"));
     m_pVikeWin->UpdateStatusBar();
@@ -145,14 +145,14 @@ void cbVike::Attach(wxWindow *p)
     LOGIT(wxT("wxVike::Attach - attaching to [%s] %p"), p->GetName().c_str(),p);
 
     // create a new event handler for this window
-    wxEvtHandler *h = new VikeEvtHandler(this, p);
+    wxEvtHandler *h = new VikeEvtBinder(this, p);
     m_arrHandlers.Add((void*)h);
 }
 
 int cbVike::FindHandlerIdxFor(wxWindow *p) const
 {
 	for (int i=0; i<(int)m_arrHandlers.GetCount(); i++)
-		if (((VikeEvtHandler *)m_arrHandlers.Item(i))->IsAttachedTo(p))
+		if (((VikeEvtBinder *)m_arrHandlers.Item(i))->IsAttachedTo(p))
 			return i;
 
 	return wxNOT_FOUND;
@@ -167,7 +167,7 @@ void cbVike::Detach(wxWindow *p, bool deleteEvtHandler)
 
 	// remove the event handler
 	int idx = FindHandlerIdxFor(p);
-	VikeEvtHandler *toremove = (VikeEvtHandler*)m_arrHandlers.Item(idx);
+	VikeEvtBinder *toremove = (VikeEvtBinder*)m_arrHandlers.Item(idx);
 	m_arrHandlers.RemoveAt(idx, 1);
 
 	// the wxBinderEvtHandler will remove itself from p's event handlers
@@ -234,7 +234,7 @@ void cbVike::DetachAll()
 
 	for (int i=0; i < (int)m_arrHandlers.GetCount(); i++)
 	 {
-        VikeEvtHandler* pHdlr = (VikeEvtHandler*)m_arrHandlers.Item(i);
+        VikeEvtBinder* pHdlr = (VikeEvtBinder*)m_arrHandlers.Item(i);
         pwin = pHdlr->GetTargetWnd();     //+v0.4
         if  (!winExists( pwin ) )
         {   //+v0.4.9
@@ -384,10 +384,14 @@ void VikeWin::UpdateStatusBar()
         }
         m_pStatusBar->SetStatusText(mode_txt, STATUS_COMMAND);
 
+        wxString keyState;
+        for(int i = 0; i < m_arrKey.GetCount(); i++){
+            keyState.append((wxChar)m_arrKey[i]);
+        }
         if(m_arrKey.IsEmpty()){
             m_pStatusBar->SetStatusText(_T(""), STATUS_KEY);
         }else{
-            m_pStatusBar->PushStatusText((wxChar)m_arrKey.Last(), STATUS_KEY);
+            m_pStatusBar->SetStatusText(keyState, STATUS_KEY);
         }
     }
 }

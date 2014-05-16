@@ -62,6 +62,13 @@ class ViFunc
         /* Handles the commands start with ':' */
         void Command(VikeWin *vike, int keyCode, wxScintilla *editor);
 
+        /* Find the first unpair bracket and return the position */
+        int FindUnpairBracket(wxChar bracketStart, bool lookForward, wxScintilla *editor);
+
+        /* Select text wrapped with bracket given, returning the length of character selected if success
+           and < 0 when fail */
+        int SelectBracket(int bracket, wxScintilla* editor);
+
         /* Here are all the general functions for different keys */
         //insert mode
         void i_esc(VikeWin* m_pVike, wxScintilla* editor);
@@ -131,6 +138,8 @@ class ViFunc
         void n_cdollar_end(VikeWin *m_pVike, wxScintilla* editor);
         void n_cw(VikeWin* m_pVike, wxScintilla* editor);
         void n_cc(VikeWin* m_pVike, wxScintilla* editor);
+        void n_ci(VikeWin* m_pVike, wxScintilla* editor);
+        void n_ci_some(VikeWin* m_pVike, int keyCode, wxScintilla* editor);
 
         /* replace */
         void n_r(VikeWin* m_pVike, wxScintilla* editor);
