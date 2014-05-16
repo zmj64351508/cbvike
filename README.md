@@ -38,7 +38,7 @@ Insert
 Editing
 	
 	(num)cw      -- change (num) word(s)
-	(num)cc,     -- change (num) line(s)
+	(num)cc      -- change (num) line(s)
 	(num)c$      -- change to line end
 	r<character> -- replace current position by character
 	u            -- undo
@@ -46,8 +46,8 @@ Editing
 	
 Cut and paste
 
-	x -- delete
-	X -- backspace
+	x            -- delete
+	X            -- backspace
 	(num)yw      -- yank (num) word(s)
 	(num)yy      -- yank (num) line(s)
 	(num)y$      -- yank to line end
