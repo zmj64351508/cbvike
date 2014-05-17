@@ -31,7 +31,7 @@ void VikePlugin::OnAttach()
 {
     pcbWindow = Manager::Get()->GetAppWindow();
 
-    #if LOGGING
+    #ifdef LOGGING
         wxLog::EnableLogging(true);
         pMyLog = new wxLogWindow(pcbWindow,wxT("vike"),true,false);
         wxLog::SetActiveTarget(pMyLog);
@@ -39,6 +39,7 @@ void VikePlugin::OnAttach()
         pMyLog->Flush();
         pMyLog->GetFrame()->Move(20,20);
     #endif
+
     LOGIT(_T("Enter OnAttach"));
 
     cbVike::usableWindows.Add(_T("sciwindow"));
@@ -57,15 +58,18 @@ void VikePlugin::OnAttach()
 	Manager::Get()->RegisterEventSink(cbEVT_EDITOR_CLOSE, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnEditorClose));
 	Manager::Get()->RegisterEventSink(cbEVT_APP_STARTUP_DONE, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnAppStartupDone));
     Manager::Get()->RegisterEventSink(cbEVT_APP_START_SHUTDOWN, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnAppStartShutdown));
+    Connect( wxEVT_DESTROY,  (wxObjectEventFunction) (wxEventFunction)(wxCommandEventFunction) &VikePlugin::OnWindowDestroyEvent);
 
 	return;
 }//OnAttach
 
 void VikePlugin::OnRelease(bool appShutDown)
 {
+    LOGIT(_T("enter OnRelease"));
     //release all event handlers when plugin is disabled.
-	pVike->DetachAll();
+	//pVike->DetachAll();
     delete pVike;
+    LOGIT(_T("exit OnRelease"));
 }//OnRelease
 
 void VikePlugin::OnAppStartupDone(CodeBlocksEvent& event)
@@ -80,10 +84,6 @@ void VikePlugin::OnAppStartupDone(CodeBlocksEvent& event)
         (wxObjectEventFunction) (wxEventFunction)
         (wxCommandEventFunction) &cbVike::OnWindowCreateEvent);
 */
-    Connect( wxEVT_DESTROY,
-        (wxObjectEventFunction) (wxEventFunction)
-        (wxCommandEventFunction) &VikePlugin::OnWindowDestroyEvent);
-
     pVike->ShowStatusBar();
     event.Skip();
 }//OnAppStartupDone
@@ -152,9 +152,7 @@ void VikePlugin::OnEditorClose(CodeBlocksEvent& event)
         //------------------------------------------------------------------
         if(thisEditor) {
             pVike->Detach(thisEditor);
-            #if LOGGING
-                LOGIT(_T("OnEditorClose %s %p"), thisEditor->GetLabel().c_str(), thisEditor);
-            #endif
+            LOGIT(_T("OnEditorClose %s %p"), thisEditor->GetLabel().c_str(), thisEditor);
         }
     }
     event.Skip();
@@ -212,10 +210,7 @@ void VikePlugin::OnWindowDestroyEvent(wxEvent& event)
         // deleteing the EvtHandler here will crash CB
         // detach before removing the ed ptr
         DetachEditor(thisWindow, /*DeleteEvtHander*/false);
-
-        #ifdef LOGGING
-         LOGIT( _T("OnWindowDestroyEvent Removed %p"), thisWindow);
-        #endif //LOGGING
+        LOGIT( _T("OnWindowDestroyEvent Removed %p"), thisWindow);
     }
     event.Skip();
 }//OnWindowClose
@@ -233,9 +228,7 @@ void VikePlugin::AttachEditor(wxWindow* pWindow)
             LOGIT(_T("Attach in AttachEditor"));
             //Rebind keys to newly opened windows
             pVike->Attach(thisEditor);
-            #if LOGGING
-             LOGIT(_T("cbKB:AttachEditor %s %p"), thisEditor->GetLabel().c_str(), thisEditor);
-            #endif
+            LOGIT(_T("cbKB:AttachEditor %s %p"), thisEditor->GetLabel().c_str(), thisEditor);
         }
     }
 }
@@ -258,9 +251,7 @@ void VikePlugin::DetachEditor(wxWindow* pWindow, bool deleteEvtHandler)
         if ( thisEditor)
          {
             pVike->Detach(thisEditor, deleteEvtHandler);
-            #if LOGGING
-                 LOGIT(_T("cbKB:DetachEditor %s %p"), thisEditor->GetLabel().c_str(), thisEditor);
-            #endif
+            LOGIT(_T("cbKB:DetachEditor %s %p"), thisEditor->GetLabel().c_str(), thisEditor);
          }//if
      }
 

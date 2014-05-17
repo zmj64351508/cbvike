@@ -65,7 +65,7 @@ Bracket related
 Commands
 	
 	/<something to find>
-	:nohl        -- no hightlight
+	:nohl        -- no highlight
 
 
 ## Known Issues
@@ -77,9 +77,15 @@ Commands
 
 Currently It has been built under Windows 7 64 bit with Code::Blocks 12.11 (build 8629) and MinGW including GCC 4.8.1 
 
-You need to build it yourself. The project is managed by Code::Blocks. When you open the project you need to set the include and lib searching path yourself in the `Project - Build Options`.
+1. You can build the plugin with or without building Code::Blocks and wxWidgets. But any way, you need to download source code for Code::Blocks and wxWidgets, at least for the headers.
 
-Before you build the plugin you need to build wxWidget 2.8.x(for me is 2.8.12) and Code::Blocks(for me is build 8629) from source. You can get help from <http://wiki.codeblocks.org/index.php?title=Installing_Code::Blocks_from_source_on_Windows>
+2. You need to set following variables in Code::Blocks before compiling
+
+	* `wx` -- the source directory for wxWidgets
+	* `cb_path`     -- the source directory for Code::Blocks
+	* `cb_dll_path` -- the binary directory for Code::Blocks including cb and wx libraries. This can be either the directory where you build source yourself or the directory you installed Code::Blocks from a pre-built binary.
+
+3. Build target `All` or `release` for users and `debug` for developers.
 
 If you have ideas or need help, feel free to contact me by <Arthur.zmj@gmail.com>
 

@@ -2,11 +2,13 @@
 #define __DEBUGGING_H__
 
 //enable debug when define LOGGING
-#define LOGGING 1
-#define LOGIT wxLogDebug
+#ifdef LOGGING
+    #define LOGIT wxLogDebug
+#else
+    #define LOGIT
+#endif
 
-
-#if LOGGING
+#ifdef LOGGING
     #undef LOGIT
    #ifdef __WXMSW__
     #define TRAP asm("int3")

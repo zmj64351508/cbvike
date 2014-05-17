@@ -217,5 +217,4 @@ int VikeCmdFunc::nohl(int argc, wxString *argv[], VikeWin *vike, wxScintilla *ed
 {
     vike->GetHighlight().Hide(editor);
 }
-
-/***************** VikeCmdFunc start *****************/
+/***************** VikeCmdFunc end *****************/

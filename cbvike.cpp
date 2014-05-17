@@ -102,6 +102,16 @@ void cbVike::CreateStatusBar()
     Manager::Get()->ProcessEvent(evt);
 }
 
+void cbVike::DestoryStatusBar()
+{
+    CodeBlocksDockEvent evt(cbEVT_REMOVE_DOCK_WINDOW);
+    evt.name = _T("Vike status");
+    evt.title = _("Vike status");
+    evt.pWindow = m_pStatusBar;
+    Manager::Get()->ProcessEvent(evt);
+    delete m_pStatusBar;
+}
+
 void cbVike::ShowStatusBar()
 {
     CodeBlocksDockEvent evt(cbEVT_SHOW_DOCK_WINDOW);
@@ -167,11 +177,13 @@ void cbVike::Detach(wxWindow *p, bool deleteEvtHandler)
 
 	// remove the event handler
 	int idx = FindHandlerIdxFor(p);
+	LOGIT(wxT("idx is %d, %d left"), idx);
 	VikeEvtBinder *toremove = (VikeEvtBinder*)m_arrHandlers.Item(idx);
 	m_arrHandlers.RemoveAt(idx, 1);
 
 	// the wxBinderEvtHandler will remove itself from p's event handlers
 	if (deleteEvtHandler) delete toremove;
+	LOGIT(wxT("%d handlers left"), m_arrHandlers.GetCount());
 }
 
 wxWindow* cbVike::FindWindowRecursively(const wxWindow* parent, const wxWindow* handle)
@@ -235,20 +247,22 @@ void cbVike::DetachAll()
 	for (int i=0; i < (int)m_arrHandlers.GetCount(); i++)
 	 {
         VikeEvtBinder* pHdlr = (VikeEvtBinder*)m_arrHandlers.Item(i);
+        LOGIT(_T("pHdlr is %p"), pHdlr);
         pwin = pHdlr->GetTargetWnd();     //+v0.4
+        LOGIT(_T("pwin is %p"), pwin);
         if  (!winExists( pwin ) )
         {   //+v0.4.9
             // tell dtor not to crash by using RemoveEventHander()
             pHdlr->SetWndInvalid(0);
             LOGIT( _T("WxKeyBinder:DetachAll:window NOT found %p <----------"), pwin); //+v0.4.6
         }
-        #if LOGGING
-         if (pHdlr->GetTargetWnd())
-           LOGIT( _T("WxKeyBinder:DetachAll:Deleteing EvtHdlr for [%s] %p"), pwin->GetLabel().GetData(), pwin);     //+v0.4
-        #endif
+        if (pHdlr->GetTargetWnd()){
+            LOGIT( _T("WxKeyBinder:DetachAll:Deleteing EvtHdlr for [%s] %p"), pwin->GetLabel().GetData(), pwin);     //+v0.4
+        }
         delete pHdlr;
 	 }
 
+    LOGIT(_T("clear m_arrHandlers"));
 	// and clear the array
 	m_arrHandlers.Clear();
 

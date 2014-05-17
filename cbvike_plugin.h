@@ -34,7 +34,7 @@ class VikePlugin : public cbPlugin
 		void OnAttach();
 		void OnRelease(bool appShutDown);
 
-      #if LOGGING
+      #ifdef LOGGING
         //for logging
         wxLogWindow* pMyLog;
       #endif

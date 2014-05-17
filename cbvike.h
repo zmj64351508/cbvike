@@ -60,7 +60,7 @@ class cbVike: public wxObject
         virtual ~cbVike()
         {
             if(m_pStatusBar){
-                delete m_pStatusBar;
+                DestoryStatusBar();
             }
             DetachAll();
         }
@@ -89,6 +89,9 @@ class cbVike: public wxObject
 
         /* Create the status bar */
         void CreateStatusBar();
+
+        /* Destory the status bar */
+        void DestoryStatusBar();
 
         /* Show the status bar */
         void ShowStatusBar();
