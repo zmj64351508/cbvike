@@ -76,13 +76,17 @@ void VikeEvtBinder::OnKeyDown(wxKeyEvent &p)
     m_pVike->OnKeyDown(m_pVikeWin, p);
 }
 
-void VikeEvtBinder::OnFocus(wxFocusEvent &p)
+void VikeEvtBinder::OnFocus(wxFocusEvent &event)
 {
     LOGIT(_("on focus"));
-    m_pVikeWin->UpdateStatusBar();
-    //vike->OnFocus(p, GetNextHandler());
-    //((wxWindow*)p.GetWindow())->SetFocus();
-    p.Skip();
+    cbEditor *edBase = Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor();
+    wxScintilla *editor = NULL;
+    if(edBase){
+        editor = (wxScintilla *)edBase->GetControl();
+        m_pVikeWin->UpdateStatusBar();
+        m_pVikeWin->UpdateCaret((wxScintilla *)editor);
+    }
+    event.Skip();
 }
 /******************* VikeEvtHandler end ***********************/
 
@@ -289,9 +293,7 @@ void cbVike::OnKeyDown(VikeWin *vikeWin, wxKeyEvent &event)
 
 void cbVike::OnFocus(wxFocusEvent &event)
 {
-    ((wxScintilla*)event.GetEventObject())->StyleResetDefault();
-    //((wxScintilla*)event.GetEventObject())->SetCaretStyle(wxSCI_CARETSTYLE_LINE);
-    LOGIT(_T("set line"));
+
 }
 
 /******************* cbVike end *****************************/
@@ -350,6 +352,15 @@ bool VikeWin::OnKeyDown(wxKeyEvent &event)
 void VikeWin::SetStartCaret(wxScintilla* editor) const
 {
     editor->SetCaretStyle(wxSCI_CARETSTYLE_BLOCK);
+}
+
+void VikeWin::UpdateCaret(wxScintilla *editor)
+{
+    if(m_iMode == INSERT){
+        editor->SetCaretStyle(wxSCI_CARETSTYLE_LINE);
+    }else{
+        editor->SetCaretStyle(wxSCI_CARETSTYLE_BLOCK);
+    }
 }
 
 void VikeWin::Finish(wxScintilla *editor)

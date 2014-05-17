@@ -212,6 +212,9 @@ class VikeWin{
         /* set caret when startup */
         void SetStartCaret(wxScintilla* editor) const;
 
+        /* Update caret by current mode */
+        void UpdateCaret(wxScintilla* editor);
+
         /* Called on each vifunc end */
         void Finish(wxScintilla *editor);
 
