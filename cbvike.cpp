@@ -24,6 +24,7 @@
 #include "cbvike.h"
 #include "debugging.h"
 
+
 IMPLEMENT_CLASS(cbVike, wxObject)
 IMPLEMENT_CLASS(VikeEvtBinder, wxEvtHandler)
 
@@ -88,7 +89,7 @@ void VikeEvtBinder::OnFocus(wxFocusEvent &p)
 /******************* cbVike start *****************************/
 void cbVike::CreateStatusBar()
 {
-    m_pStatusBar = new wxStatusBar(Manager::Get()->GetAppWindow(),  wxID_ANY, wxSB_NORMAL, wxString((wxChar*)"cbVike"));
+    m_pStatusBar = new VikeStatusBar(Manager::Get()->GetAppWindow(),  wxID_ANY, wxSB_NORMAL, wxString((wxChar*)"cbVike"));
     m_pStatusBar->SetFieldsCount(STATUS_FIELD_NUM);
     CodeBlocksDockEvent evt(cbEVT_ADD_DOCK_WINDOW);
     evt.name = _T("Vike status");
@@ -292,10 +293,11 @@ void cbVike::OnFocus(wxFocusEvent &event)
     //((wxScintilla*)event.GetEventObject())->SetCaretStyle(wxSCI_CARETSTYLE_LINE);
     LOGIT(_T("set line"));
 }
+
 /******************* cbVike end *****************************/
 
 /******************* VikeWin start **************************/
-VikeWin::VikeWin(wxStatusBar *sb)
+VikeWin::VikeWin(VikeStatusBar *sb)
     : m_searchCmd('/', m_highlight),
       m_generalCmd(':', m_highlight),
       m_pStatusBar(sb)

@@ -21,12 +21,7 @@ class VikePlugin : public cbPlugin
 		virtual ~VikePlugin();
 
         /**virtual**/
-		void BuildMenu(wxMenuBar* menuBar){
-            //delete system editor hotkeys that conflict with vim
-            delAccer(menuBar,_("&Search"),_("Find..."));
-            delAccer(menuBar,_("&Search"),_("Replace..."));
-            delAccer(menuBar,_("&Edit"),_("Bookmarks"),_("Toggle bookmark"));
-        }
+		void BuildMenu(wxMenuBar* menuBar);
 		void BuildModuleMenu(const ModuleType type, wxMenu* menu, const FileTreeData* data = 0){}
 		bool BuildToolBar(wxToolBar* toolBar){return FALSE;}
         /****/
@@ -45,7 +40,8 @@ class VikePlugin : public cbPlugin
         void OnEditorClose(CodeBlocksEvent& event);
         void AttachEditor(wxWindow* pEditor);
         void DetachEditor(wxWindow* pWindow, bool deleteEvtHandler = true);
-
+        void OnToggleStatusBar(wxCommandEvent& event);
+        void OnUpdateUI(cb_unused wxUpdateUIEvent& event);
         void OnAppStartupDone(CodeBlocksEvent& event);
         void OnAppStartShutdown(CodeBlocksEvent& event);
 

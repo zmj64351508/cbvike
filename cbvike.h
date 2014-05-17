@@ -34,10 +34,25 @@ enum VikeStatusBarField{
     STATUS_FIELD_NUM,
 };
 
+extern const int idVikeViewStatusBar;
+
 class VikeWin;
 
 /*! Vike status bar */
-class VikeStatusBar{
+class VikeStatusBar: public wxStatusBar{
+    public:
+        VikeStatusBar(wxWindow *window, wxWindowID id, long flag, const wxString &name)
+            :wxStatusBar(window, id, flag, name)
+        {
+        }
+
+        void OnHide(CodeBlocksEvent& event)
+        {
+            LOGIT(_T("VikeStatusBar OnClose"));
+            Manager::Get()->GetAppFrame()->GetMenuBar()->Check(idVikeViewStatusBar, false);
+            event.Skip();
+        }
+    private:
 
 };
 
@@ -100,13 +115,13 @@ class cbVike: public wxObject
         void HideStatusBar();
 
         /* Get the status bar */
-        wxStatusBar *GetStatusBar(){ return m_pStatusBar; };
+        VikeStatusBar *GetStatusBar(){ return m_pStatusBar; };
 
     protected:
         wxArrayPtrVoid m_arrHandlers;
 
     private:
-        wxStatusBar *m_pStatusBar;
+        VikeStatusBar *m_pStatusBar;
         DECLARE_CLASS(cbVike)
 };//cbVike
 
@@ -188,7 +203,7 @@ class VikeHighlight{
 /*! Every window has an instance of VikeWin which store the state for each window */
 class VikeWin{
     public:
-        VikeWin(wxStatusBar *sb);
+        VikeWin(VikeStatusBar *sb);
 
         /* The event handler that do something related to each vike window */
         bool OnChar(wxKeyEvent &event);
@@ -250,7 +265,7 @@ class VikeWin{
         VikeMode m_iMode;
         VikeState m_iState;
 
-        wxStatusBar *m_pStatusBar;
+        VikeStatusBar *m_pStatusBar;
 
         VikeSearchCmd m_searchCmd;
         VikeGeneralCmd m_generalCmd;

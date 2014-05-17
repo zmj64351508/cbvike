@@ -10,7 +10,10 @@
 #include "cbstatusbar.h"
 #include "cbvike_plugin.h"
 #include "debugging.h"
+#include "cbvike.h"
 #include "vifunc.h"
+
+const int idVikeViewStatusBar = wxNewId();
 
 // Register the plugin
 namespace
@@ -58,7 +61,10 @@ void VikePlugin::OnAttach()
 	Manager::Get()->RegisterEventSink(cbEVT_EDITOR_CLOSE, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnEditorClose));
 	Manager::Get()->RegisterEventSink(cbEVT_APP_STARTUP_DONE, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnAppStartupDone));
     Manager::Get()->RegisterEventSink(cbEVT_APP_START_SHUTDOWN, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnAppStartShutdown));
-    Connect( wxEVT_DESTROY,  (wxObjectEventFunction) (wxEventFunction)(wxCommandEventFunction) &VikePlugin::OnWindowDestroyEvent);
+    //Manager::Get()->RegisterEventSink(cbEVT_DOCK_WINDOW_VISIBILITY, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnHideStatusBar));
+    Connect( wxEVT_DESTROY,  (wxObjectEventFunction)&VikePlugin::OnWindowDestroyEvent);
+    Connect( idVikeViewStatusBar, wxEVT_COMMAND_MENU_SELECTED,  wxCommandEventHandler(VikePlugin::OnToggleStatusBar));
+    Connect( idVikeViewStatusBar, wxEVT_UPDATE_UI,  wxUpdateUIEventHandler(VikePlugin::OnUpdateUI));
 
 	return;
 }//OnAttach
@@ -71,6 +77,51 @@ void VikePlugin::OnRelease(bool appShutDown)
     delete pVike;
     LOGIT(_T("exit OnRelease"));
 }//OnRelease
+
+void VikePlugin::OnToggleStatusBar(wxCommandEvent& event)
+{
+    LOGIT(_T("Toggle status bar"));
+    if (event.IsChecked()){
+        pVike->ShowStatusBar();
+    }else{
+        pVike->HideStatusBar();
+    }
+    //event.Skip();
+}
+
+void VikePlugin::OnUpdateUI(cb_unused wxUpdateUIEvent& event)
+{
+    LOGIT(_T("OnUpdateUI"));
+    Manager::Get()->GetAppFrame()->GetMenuBar()->Check(idVikeViewStatusBar, IsWindowReallyShown(pVike->GetStatusBar()));
+}
+
+void VikePlugin::BuildMenu(wxMenuBar* menuBar){
+    //delete system editor hotkeys that conflict with vim
+    delAccer(menuBar,_("&Search"),_("Find..."));
+    delAccer(menuBar,_("&Search"),_("Replace..."));
+    delAccer(menuBar,_("&Edit"),_("Bookmarks"),_("Toggle bookmark"));
+
+    int idx = menuBar->FindMenu(_("&View"));
+    if (idx != wxNOT_FOUND)
+    {
+        wxMenu* view = menuBar->GetMenu(idx);
+        wxMenuItemList& items = view->GetMenuItems();
+        // find the first separator and insert before it
+        bool done = false;
+        for (size_t i = 0; i < items.GetCount(); ++i)
+        {
+            if (items[i]->IsSeparator())
+            {
+                view->InsertCheckItem(i, idVikeViewStatusBar, _("Vike status"), _("Toggle displaying the status for Vike"));
+                done = true;
+                break;
+            }
+        }
+        // not found, just append
+        if ( !done )
+            view->AppendCheckItem(idVikeViewStatusBar, _("Vike status"), _("Toggle displaying the status for Vike"));
+    }
+}
 
 void VikePlugin::OnAppStartupDone(CodeBlocksEvent& event)
 {
