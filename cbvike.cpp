@@ -55,7 +55,7 @@ wxArrayString cbVike::usableWindows;                    //+v0.4.4
 VikeEvtBinder::VikeEvtBinder(cbVike *vike, wxWindow *tg)
     : m_pVike(vike), m_pTarget(tg)
 {
-    m_pVikeWin = new VikeWin(vike->GetStatusBar());
+    m_pVikeWin = new VikeWin(tg, vike->GetStatusBar());
     m_pVikeWin->SetStartCaret((wxScintilla*)tg);
     m_pTarget->PushEventHandler(this);
 }
@@ -94,7 +94,6 @@ void VikeEvtBinder::OnFocus(wxFocusEvent &event)
 void cbVike::CreateStatusBar()
 {
     m_pStatusBar = new VikeStatusBar(Manager::Get()->GetAppWindow(),  wxID_ANY, wxSB_NORMAL, wxString((wxChar*)"cbVike"));
-    m_pStatusBar->SetFieldsCount(STATUS_FIELD_NUM);
     CodeBlocksDockEvent evt(cbEVT_ADD_DOCK_WINDOW);
     evt.name = _T("Vike status");
     evt.title = _("Vike status");
@@ -299,7 +298,7 @@ void cbVike::OnFocus(wxFocusEvent &event)
 /******************* cbVike end *****************************/
 
 /******************* VikeWin start **************************/
-VikeWin::VikeWin(VikeStatusBar *sb)
+VikeWin::VikeWin(wxWindow *target, VikeStatusBar *sb)
     : m_searchCmd('/', m_highlight),
       m_generalCmd(':', m_highlight),
       m_pStatusBar(sb)
@@ -310,8 +309,26 @@ VikeWin::VikeWin(VikeStatusBar *sb)
     m_iState = VIKE_START;
     m_iCaretPos = 0;
     m_iDupNumber = 0;
-    ChangeMode(NORMAL);
     func = ViFunc::Instance();
+
+    cbEditor *editor = Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor();
+//    wxWindow *parent = target->GetParent();
+//    cbAuiNotebook *notebook = Manager::Get()->GetEditorManager()->GetNotebook();
+//    wxWindow *curPage = notebook->GetPage(notebook->GetSelection());
+//    LOGIT(_T("parent is %p, curPage is %p, editor is %p, contoller is %p, notebook is %p"), parent, curPage, editor, editor->GetControl(), notebook);
+
+    m_pBuiltinStatusBar = new VikeStatusBar(editor, wxSB_NORMAL);
+    m_pBuiltinStatusBar->SetSize(100, 25);;
+    editor->Freeze();
+    m_pSizer = new wxBoxSizer(wxVERTICAL);
+    m_pSizer->Add(editor->GetControl(), 1, wxEXPAND);
+    m_pSizer->Add(m_pBuiltinStatusBar, 0, wxEXPAND);
+    editor->SetSizer(m_pSizer, false);
+    editor->Layout();
+    editor->Thaw();
+
+    /* the last step to change mode */
+    ChangeMode(NORMAL);
 }
 
 bool VikeWin::OnChar(wxKeyEvent &event)
@@ -391,12 +408,19 @@ VikeHighlight &VikeWin::GetHighlight()       { return m_highlight; }
 
 void VikeWin::UpdateStatusBar()
 {
+    VikeStatusBar *activeBar;
+    //activeBar = m_pStatusBar;
+    activeBar = m_pBuiltinStatusBar;
+    if(!activeBar){
+        return;
+    }
+
     if(m_iMode == NORMAL && m_iState == VIKE_SEARCH){
-        m_pStatusBar->SetStatusText(m_searchCmd.GetCommandWithPrefix(), STATUS_COMMAND);
-        m_pStatusBar->SetStatusText(_T(""), STATUS_KEY);
+        activeBar->SetStatusText(m_searchCmd.GetCommandWithPrefix(), STATUS_COMMAND);
+        activeBar->SetStatusText(_T(""), STATUS_KEY);
     }else if(m_iMode == NORMAL && m_iState == VIKE_COMMAND){
-        m_pStatusBar->SetStatusText(m_generalCmd.GetCommandWithPrefix(), STATUS_COMMAND);
-        m_pStatusBar->SetStatusText(_T(""), STATUS_KEY);
+        activeBar->SetStatusText(m_generalCmd.GetCommandWithPrefix(), STATUS_COMMAND);
+        activeBar->SetStatusText(_T(""), STATUS_KEY);
     }else{
         const wxChar *mode_txt = NULL;
         switch(m_iMode){
@@ -409,16 +433,16 @@ void VikeWin::UpdateStatusBar()
         default:
             break;
         }
-        m_pStatusBar->SetStatusText(mode_txt, STATUS_COMMAND);
+        activeBar->SetStatusText(mode_txt, STATUS_COMMAND);
 
         wxString keyState;
         for(int i = 0; i < m_arrKey.GetCount(); i++){
             keyState.append((wxChar)m_arrKey[i]);
         }
         if(m_arrKey.IsEmpty()){
-            m_pStatusBar->SetStatusText(_T(""), STATUS_KEY);
+            activeBar->SetStatusText(_T(""), STATUS_KEY);
         }else{
-            m_pStatusBar->SetStatusText(keyState, STATUS_KEY);
+            activeBar->SetStatusText(keyState, STATUS_KEY);
         }
     }
 }

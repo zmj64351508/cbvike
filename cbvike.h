@@ -44,6 +44,13 @@ class VikeStatusBar: public wxStatusBar{
         VikeStatusBar(wxWindow *window, wxWindowID id, long flag, const wxString &name)
             :wxStatusBar(window, id, flag, name)
         {
+            SetFieldsCount(STATUS_FIELD_NUM);
+        }
+
+        VikeStatusBar(wxWindow *window, long flag)
+            :wxStatusBar(window, wxID_ANY, flag)
+        {
+            SetFieldsCount(STATUS_FIELD_NUM);
         }
 
         void OnHide(CodeBlocksEvent& event)
@@ -203,7 +210,12 @@ class VikeHighlight{
 /*! Every window has an instance of VikeWin which store the state for each window */
 class VikeWin{
     public:
-        VikeWin(VikeStatusBar *sb);
+        VikeWin(wxWindow *target, VikeStatusBar *sb);
+        ~VikeWin()
+        {
+            delete m_pBuiltinStatusBar;
+            delete m_pSizer;
+        }
 
         /* The event handler that do something related to each vike window */
         bool OnChar(wxKeyEvent &event);
@@ -269,6 +281,8 @@ class VikeWin{
         VikeState m_iState;
 
         VikeStatusBar *m_pStatusBar;
+        VikeStatusBar *m_pBuiltinStatusBar;
+        wxBoxSizer *m_pSizer;
 
         VikeSearchCmd m_searchCmd;
         VikeGeneralCmd m_generalCmd;

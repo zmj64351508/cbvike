@@ -135,7 +135,7 @@ void VikePlugin::OnAppStartupDone(CodeBlocksEvent& event)
         (wxObjectEventFunction) (wxEventFunction)
         (wxCommandEventFunction) &cbVike::OnWindowCreateEvent);
 */
-    pVike->ShowStatusBar();
+    //pVike->ShowStatusBar();
     event.Skip();
 }//OnAppStartupDone
 
