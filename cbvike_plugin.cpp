@@ -1,7 +1,3 @@
-#if defined(__GNUG__)
-	#pragma implementation "cbvike.h"
-#endif
-
 #include "sdk.h"
 #ifndef CB_PRECOMP
     #include <wx/log.h>
@@ -72,6 +68,11 @@ void VikePlugin::OnAttach()
 void VikePlugin::OnRelease(bool appShutDown)
 {
     LOGIT(_T("enter OnRelease"));
+
+    Disconnect( wxEVT_DESTROY,  (wxObjectEventFunction)&VikePlugin::OnWindowDestroyEvent);
+    Disconnect( idVikeViewStatusBar, wxEVT_COMMAND_MENU_SELECTED,  wxCommandEventHandler(VikePlugin::OnToggleStatusBar));
+    Disconnect( idVikeViewStatusBar, wxEVT_UPDATE_UI,  wxUpdateUIEventHandler(VikePlugin::OnUpdateUI));
+
     //release all event handlers when plugin is disabled.
 	//pVike->DetachAll();
     delete pVike;

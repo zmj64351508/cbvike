@@ -11,61 +11,62 @@ It can emulate the basic functions of VIM. Tested functions are as follow:
 
 Movement
 
-	h, j, k, l
-	w	         -- goto next word
+    h, j, k, l
+    w            -- goto next word
     b            -- goto previous word
-	gg           -- goto start of file
-	<num>G       -- goto line(num)
-	G            -- goto end of file
-	0            -- visiable line start
-	^            -- line start
-	$            -- line end
+    gg           -- goto start of file
+    <num>G       -- goto line(num)
+    G            -- goto end of file
+    0            -- visiable line start
+    ^            -- line start
+    $            -- line end
     f<character> -- find next character
-	F<character> -- find previous character
-	n            -- next match case
-	N            -- previous match case
+    F<character> -- find previous character
+    n            -- next match case
+    N            -- previous match case
 
 Insert
 
-	ESC
-	i            -- insert at current position
-	I            -- insert at line start
-	a            -- append at current position
-	A            -- append at line end
-	o            -- new line after current line
-	O            -- new line above current line
+    ESC
+    i            -- insert at current position
+    I            -- insert at line start
+    a            -- append at current position
+    A            -- append at line end
+    o            -- new line after current line
+    O            -- new line above current line
 
 Editing
-	
-	(num)cw      -- change (num) word(s)
-	(num)cc      -- change (num) line(s)
-	(num)c$      -- change to line end
-	r<character> -- replace current position by character
-	u            -- undo
-	Ctrl-r       -- redo
-	
+    
+    (num)cw      -- change (num) word(s)
+    (num)cc      -- change (num) line(s)
+    (num)c$      -- change to line end
+    (num)C       -- the same as c$
+    r<character> -- replace current position by character
+    u            -- undo
+    Ctrl-r       -- redo
+    
 Cut and paste
 
-	x            -- delete
-	X            -- backspace
-	(num)yw      -- yank (num) word(s)
-	(num)yy      -- yank (num) line(s)
-	(num)y$      -- yank to line end
-	(num)dw      -- delete (num) word(s)
-	(num)dd      -- delete (num) line(s)
-	(num)d$      -- delete to line end
-	(num)D       -- the same as d$
-	p            -- paste below
-	P            -- paste above
+    x            -- delete
+    X            -- backspace
+    (num)yw      -- yank (num) word(s)
+    (num)yy      -- yank (num) line(s)
+    (num)y$      -- yank to line end
+    (num)dw      -- delete (num) word(s)
+    (num)dd      -- delete (num) line(s)
+    (num)d$      -- delete to line end
+    (num)D       -- the same as d$
+    p            -- paste below
+    P            -- paste above
 
 Bracket related
 
-	ci<bracket>  -- change in bracket -- such as ci(, ci), ci{, ci}, ci<, ci>, ci[, ci]
+    ci<bracket>  -- change in bracket -- such as ci(, ci), ci{, ci}, ci<, ci>, ci[, ci]
 
 Commands
-	
-	/<something to find>
-	:nohl        -- no highlight
+    
+    /<something to find>
+    :nohl        -- no highlight
 
 
 ## Known Issues
@@ -81,9 +82,9 @@ Currently It has been built under Windows 7 64 bit with Code::Blocks 12.11 (buil
 
 2. You need to set following variables in Code::Blocks before compiling
 
-	* `wx` -- the source directory for wxWidgets
-	* `cb_path`     -- the source directory for Code::Blocks
-	* `cb_dll_path` -- the binary directory for Code::Blocks including cb and wx libraries. This can be either the directory where you build source yourself or the directory you installed Code::Blocks from a pre-built binary.
+    * `wx` -- the source directory for wxWidgets
+    * `cb_path`     -- the source directory for Code::Blocks
+    * `cb_dll_path` -- the binary directory for Code::Blocks including cb and wx libraries. This can be either the directory where you build source yourself or the directory you installed Code::Blocks from a pre-built binary.
 
 3. Build target `All` or `release` for users and `debug` for developers.
 

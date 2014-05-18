@@ -1,10 +1,6 @@
 #ifndef __VIKE_H__
 #define __VIKE_H__
 
-#ifdef __GNUG__
-#pragma interface "cbvike.h"
-#endif
-
 #include "debugging.h"
 #include "vifunc.h"
 #include "cbstyledtextctrl.h"
@@ -72,9 +68,9 @@ class cbVike: public wxObject
         cbVike() {}
 
         /* All the event handler */
-        void OnChar(VikeWin *m_pVike, wxKeyEvent &event);
+        void OnChar(VikeWin *vike, wxKeyEvent &event);
         void OnFocus(wxFocusEvent &event);
-        void OnKeyDown(VikeWin *m_pVike, wxKeyEvent &event);
+        void OnKeyDown(VikeWin *vike, wxKeyEvent &event);
 
         /* Attaches this class to the given window. */
         void Attach(wxWindow *p);

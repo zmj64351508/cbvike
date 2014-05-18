@@ -1,10 +1,6 @@
 #ifndef __VICMD_H__
 #define __VICMD_H__
 
-#ifdef __GNUG__
-#pragma interface "vicmd.h"
-#endif
-
 #include "cbstyledtextctrl.h"
 #include "debugging.h"
 

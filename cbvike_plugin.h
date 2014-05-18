@@ -1,10 +1,6 @@
 #ifndef __CBVIKE_H__
 #define __CBVIKE_H__
 
-#if defined(__GNUG__)
-	#pragma interface "cbvike.h"
-#endif
-
 #include "cbplugin.h"
 #include "cbvike.h"
 
