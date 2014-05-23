@@ -319,9 +319,8 @@ VikeWin::~VikeWin()
     LOGIT(_T("Deleting VikeWin"));
 }
 
-bool VikeWin::OnChar(wxKeyEvent &event)
+void VikeWin::GeneralHandler(int keyCode, bool skip)
 {
-    bool skip = func->NormalKeyHandler(this, event);
     if(!skip){
         if(m_iState == VIKE_END){
             ClearKeyStatus();
@@ -329,27 +328,25 @@ bool VikeWin::OnChar(wxKeyEvent &event)
         }else if(m_iState == VIKE_SEARCH || m_iState == VIKE_COMMAND){
             ClearKeyStatus();
         }else{
-            AppendKeyStatus(event.GetKeyCode());
+            AppendKeyStatus(keyCode);
         }
         UpdateStatusBar();
+    }else if(m_iState == VIKE_END){
+        SetState(VIKE_START);
     }
+}
+
+bool VikeWin::OnChar(wxKeyEvent &event)
+{
+    bool skip = func->NormalKeyHandler(this, event);
+    GeneralHandler(event.GetKeyCode(), skip);
     return skip;
 }
 
 bool VikeWin::OnKeyDown(wxKeyEvent &event)
 {
     bool skip = func->EspecialKeyHandler(this, event);
-    if(!skip){
-        if(m_iState == VIKE_END){
-            ClearKeyStatus();
-            SetState(VIKE_START);
-        }else if(m_iState == VIKE_SEARCH || m_iState == VIKE_COMMAND){
-            ClearKeyStatus();
-        }else{
-            AppendKeyStatus(event.GetKeyCode());
-        }
-        UpdateStatusBar();
-    }
+    GeneralHandler(event.GetKeyCode(), skip);
     return skip;
 }
 

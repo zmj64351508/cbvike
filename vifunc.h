@@ -70,7 +70,7 @@ class ViFunc
         void i_esc(VikeWin* vike, wxScintilla* editor);
 
         //normal mode
-        void n_esc(VikeWin* vike, wxScintilla* editor);
+        bool n_esc(VikeWin* vike, wxScintilla* editor);
         void n_enter(VikeWin* vike, wxScintilla* editor);
         void n_backspace(VikeWin* vike, wxScintilla* editor);
         void n_number(VikeWin* vike, int number, wxScintilla* editor);

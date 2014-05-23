@@ -46,7 +46,7 @@ bool ViFunc::NormalModeSp(VikeWin *vike, int keyCode, int m_iModifier, wxScintil
     bool skip = false;
 
     if(keyCode == WXK_ESCAPE){
-        n_esc(vike, editor);
+        skip = n_esc(vike, editor);
     }else if(keyCode == WXK_RETURN){
         n_enter(vike, editor);
     }else if(keyCode == WXK_BACK){
@@ -60,6 +60,7 @@ bool ViFunc::NormalModeSp(VikeWin *vike, int keyCode, int m_iModifier, wxScintil
             break;
         default:
             vike->Finish(editor);
+            skip = true;
             break;
         }
     }else{
@@ -247,8 +248,9 @@ void ViFunc::i_esc(VikeWin *vike, wxScintilla* editor)
 }
 
 //normal mode
-void ViFunc::n_esc(VikeWin *vike, wxScintilla* editor)
+bool ViFunc::n_esc(VikeWin *vike, wxScintilla* editor)
 {
+    bool skip = false;
     editor->SetCaretStyle(wxSCI_CARETSTYLE_BLOCK);
     switch(vike->GetState()){
     case VIKE_SEARCH:
@@ -261,10 +263,14 @@ void ViFunc::n_esc(VikeWin *vike, wxScintilla* editor)
         vike->GetGeneralCmd().Clear();
         vike->SetState(VIKE_END);
         break;
+    case VIKE_START:
+        skip = true;
+        break;
     default:
         break;
     }
     vike->Finish(editor);
+    return skip;
 }
 void ViFunc::n_enter(VikeWin* vike, wxScintilla* editor)
 {
@@ -749,12 +755,11 @@ void ViFunc::n_P_end(VikeWin *vike, wxScintilla* editor)
 
     editor->BeginUndoAction();
     if(m_bLineCuted){
-        editor->LineUp();
-        editor->LineEnd();
+        editor->VCHome();
         editor->NewLine();
+        editor->LineUp();
+        editor->DelLineLeft();
         line = editor->GetCurrentLine();
-        //editor->DelLineLeft();
-        editor->SetLineIndentation(line, 0);
     }else{
         curPos = editor->GetCurrentPos();
     }

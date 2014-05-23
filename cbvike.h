@@ -271,6 +271,8 @@ class VikeWin{
         ViFunc *func;
 
     private:
+        void GeneralHandler(int keyCode, bool skip);
+
         VikeMode m_iMode;
         VikeState m_iState;
 
