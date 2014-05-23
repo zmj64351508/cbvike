@@ -3,25 +3,9 @@
 
 //enable debug when define LOGGING
 #ifdef LOGGING
-    #define LOGIT wxLogDebug
+    #define LOGIT wxLogMessage
 #else
-    #define LOGIT
-#endif
-
-#ifdef LOGGING
-    #undef LOGIT
-   #ifdef __WXMSW__
-    #define TRAP asm("int3")
-    #define LOGIT wxLogMessage
-   #endif
-   #ifdef __WXGTK__
-    #define TRAP asm("int3")
-    #define LOGIT wxLogMessage
-   #endif
-   #ifdef __WXMAC__
-    #define TRAP asm("trap")
-    #define LOGIT wxLogMessage
-   #endif
+    #define LOGIT(fmt, arg...)
 #endif
 
 #endif  //__DEBUGGING_H__

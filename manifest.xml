@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_plugin_manifest_file>
-    <SdkVersion major="1" minor="11" release="0" />
+    <SdkVersion major="1" minor="10" release="0" />
     <Plugin name="cbVike">
-        <Value title="Keyboard shortcuts like vi" />
-        <Value version="0.1 2014/5/7" />
-        <Value description="Code::Blocks vike" />
+        <Value title="cbVike" />
+        <Value version="0.2.0" />
+        <Value description="Code::Blocks VIM Like Plugin
+               Enjoy editing like VIM" />
         <Value author="Arthur Zhou" />
         <Value authorEmail="Arthur.zmj@gmail.com" />
         <Value authorWebsite="" />
         <Value thanksTo="Thanks to...
             Pecan Heber's keybinder plugin
+            ayheos's first prototype
             The Code::Blocks team" />
         <Value license="GPL" />
     </Plugin>

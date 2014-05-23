@@ -41,26 +41,21 @@ void VikePlugin::OnAttach()
 
     LOGIT(_T("Enter OnAttach"));
 
-    cbVike::usableWindows.Add(_T("sciwindow"));
-    cbVike::usableWindows.Add(_T("flat notebook"));
-
 	PluginInfo* pInfo = (PluginInfo*)(Manager::Get()->GetPluginManager()->GetPluginInfo(this));
-	pInfo->version = wxT(VERSION);
+	//pInfo->version = wxT(VERSION);
 
     m_bBound = false;
     pVike = new cbVike();
 
-    LOGIT(_T("Add vike status bar"));
-    pVike->CreateStatusBar();
-
 	Manager::Get()->RegisterEventSink(cbEVT_EDITOR_OPEN, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnEditorOpen));
-	Manager::Get()->RegisterEventSink(cbEVT_EDITOR_CLOSE, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnEditorClose));
+	/* We detach the editor in OnWindowDestroy because the editor controller is destroied in EVT_EDITOR_CLOSE */
+	/* We bind the event handler in OnAppStartupDone */
+	//Manager::Get()->RegisterEventSink(cbEVT_EDITOR_CLOSE, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnEditorClose));
 	Manager::Get()->RegisterEventSink(cbEVT_APP_STARTUP_DONE, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnAppStartupDone));
-    Manager::Get()->RegisterEventSink(cbEVT_APP_START_SHUTDOWN, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnAppStartShutdown));
-    //Manager::Get()->RegisterEventSink(cbEVT_DOCK_WINDOW_VISIBILITY, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnHideStatusBar));
-    Connect( wxEVT_DESTROY,  (wxObjectEventFunction)&VikePlugin::OnWindowDestroyEvent);
-    Connect( idVikeViewStatusBar, wxEVT_COMMAND_MENU_SELECTED,  wxCommandEventHandler(VikePlugin::OnToggleStatusBar));
-    Connect( idVikeViewStatusBar, wxEVT_UPDATE_UI,  wxUpdateUIEventHandler(VikePlugin::OnUpdateUI));
+	#if defined EVT_EDITOR_SPLIT && defined EVT_EDITOR_UNSPLIT
+        Manager::Get()->RegisterEventSink(cbEVT_EDITOR_SPLIT, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnEditorSplit));
+        Manager::Get()->RegisterEventSink(cbEVT_EDITOR_UNSPLIT, new cbEventFunctor<VikePlugin, CodeBlocksEvent>(this, &VikePlugin::OnEditorUnsplit));
+	#endif
 
 	return;
 }//OnAttach
@@ -68,40 +63,33 @@ void VikePlugin::OnAttach()
 void VikePlugin::OnRelease(bool appShutDown)
 {
     LOGIT(_T("enter OnRelease"));
-
-    Disconnect( wxEVT_DESTROY,  (wxObjectEventFunction)&VikePlugin::OnWindowDestroyEvent);
-    Disconnect( idVikeViewStatusBar, wxEVT_COMMAND_MENU_SELECTED,  wxCommandEventHandler(VikePlugin::OnToggleStatusBar));
-    Disconnect( idVikeViewStatusBar, wxEVT_UPDATE_UI,  wxUpdateUIEventHandler(VikePlugin::OnUpdateUI));
-
     //release all event handlers when plugin is disabled.
-	//pVike->DetachAll();
+    Disconnect(wxEVT_DESTROY, wxWindowDestroyEventHandler(VikePlugin::OnWindowDestroy));
+    #if not defined EVT_EDITOR_SPLIT || not defined EVT_EDITOR_UNSPLIT
+        Disconnect(wxEVT_CREATE, wxWindowCreateEventHandler(VikePlugin::OnWindowCreate));
+    #endif
     delete pVike;
     LOGIT(_T("exit OnRelease"));
 }//OnRelease
 
-void VikePlugin::OnToggleStatusBar(wxCommandEvent& event)
+void VikePlugin::OnAppStartupDone(CodeBlocksEvent& event)
 {
-    LOGIT(_T("Toggle status bar"));
-    if (event.IsChecked()){
-        pVike->ShowStatusBar();
-    }else{
-        pVike->HideStatusBar();
+    LOGIT(_T("Enter OnAppStartupDone"));
+    if(!m_bBound){
+        m_bBound = true;
     }
-    //event.Skip();
-}
+    Connect(wxEVT_DESTROY, wxWindowDestroyEventHandler(VikePlugin::OnWindowDestroy));
+    //Connect(Manager::Get()->GetEditorManager()->GetNotebook()->GetId(),
+            //wxEVT_SIZE, wxSizeEventHandler(VikePlugin::OnPaint));
 
-void VikePlugin::OnUpdateUI(cb_unused wxUpdateUIEvent& event)
+    #if not defined EVT_EDITOR_SPLIT || not defined EVT_EDITOR_UNSPLIT
+        Connect(wxEVT_CREATE, wxWindowCreateEventHandler(VikePlugin::OnWindowCreate));
+    #endif
+    event.Skip();
+}//OnAppStartupDone
+
+void VikePlugin::BuildMenu(wxMenuBar* menuBar)
 {
-    LOGIT(_T("OnUpdateUI"));
-    Manager::Get()->GetAppFrame()->GetMenuBar()->Check(idVikeViewStatusBar, IsWindowReallyShown(pVike->GetStatusBar()));
-}
-
-void VikePlugin::BuildMenu(wxMenuBar* menuBar){
-    //delete system editor hotkeys that conflict with vim
-    delAccer(menuBar,_("&Search"),_("Find..."));
-    delAccer(menuBar,_("&Search"),_("Replace..."));
-    delAccer(menuBar,_("&Edit"),_("Bookmarks"),_("Toggle bookmark"));
-
     int idx = menuBar->FindMenu(_("&View"));
     if (idx != wxNOT_FOUND)
     {
@@ -113,200 +101,145 @@ void VikePlugin::BuildMenu(wxMenuBar* menuBar){
         {
             if (items[i]->IsSeparator())
             {
-                view->InsertCheckItem(i, idVikeViewStatusBar, _("Vike status"), _("Toggle displaying the status for Vike"));
+                //view->InsertCheckItem(i, idVikeViewStatusBar, _("Vike status"), _("Toggle displaying the status for Vike"));
                 done = true;
                 break;
             }
         }
         // not found, just append
-        if ( !done )
-            view->AppendCheckItem(idVikeViewStatusBar, _("Vike status"), _("Toggle displaying the status for Vike"));
+        if ( !done ){
+            //view->AppendCheckItem(idVikeViewStatusBar, _("Vike status"), _("Toggle displaying the status for Vike"));
+        }
     }
 }
-
-void VikePlugin::OnAppStartupDone(CodeBlocksEvent& event)
-{
-    LOGIT(_T("Enter OnAppStartupDone"));
-    if(!m_bBound){
-        m_bBound = true;
-    }
-// Doesn't Concerned about these event except spilt window hack
-// Currently ignore split window since a special event being added
-/*    Connect( wxEVT_CREATE,
-        (wxObjectEventFunction) (wxEventFunction)
-        (wxCommandEventFunction) &cbVike::OnWindowCreateEvent);
-*/
-    //pVike->ShowStatusBar();
-    event.Skip();
-}//OnAppStartupDone
-
-void VikePlugin::OnAppStartShutdown(CodeBlocksEvent& event)
-{
-    LOGIT( _T("OnAppStartShutdown") );
-
-    event.Skip();
-}//OnAppStartShutdown
 
 void VikePlugin::OnEditorOpen(CodeBlocksEvent& event)
 {
     LOGIT(_T("Enter OnEditorOpen"));
     if (IsAttached())
     {
-        if(!m_bBound) {
+        if(!m_bBound){
             OnAppStartupDone(event);
         }
-        wxWindow* thisWindow = event.GetEditor();
-        wxWindow* thisEditor = thisWindow->FindWindowByName(_T("SCIwindow"),thisWindow);
-
-        cbEditor* ed = 0;
+        cbEditor* editor = nullptr;
         EditorBase* eb = event.GetEditor();
-
+        /* Only work with builtin editor */
         if (eb && eb->IsBuiltinEditor())
         {
-            ed = static_cast<cbEditor*>(eb);
-            thisEditor = ed->GetControl();
+            editor = static_cast<cbEditor*>(eb);
+            cbStyledTextCtrl *thisEditor = editor->GetControl();
+            LOGIT(_T("Attach in OnEditorOpen"));
+            pVike->Attach(thisEditor, editor);
+
+            //Manager::Get()->GetEditorManager()
         }
-
-        /* Temparory hack */
-        //((wxScintilla*)thisEditor)->SetCaretStyle(wxSCI_CARETSTYLE_BLOCK);
-        // pVike->Startup(thisEditor);
-
-        LOGIT(_T("Attach in OnEditorOpen"));
-        //vike = new cbVike()
-        //vike->Attach(thisEditor);
-        pVike->Attach(thisEditor);
     }
     event.Skip();
 }//OnEditorOpen
 
-void VikePlugin::OnEditorClose(CodeBlocksEvent& event)
+void VikePlugin::OnEditorSplit(CodeBlocksEvent& event)
 {
-    LOGIT(_T("Enter OnEditorClose"));
-    if (IsAttached() && m_bBound)
-    {
-        wxWindow* thisWindow = event.GetEditor();
-
-        wxWindow* thisEditor = thisWindow->FindWindowByName(_T("SCIwindow"), thisWindow);
-
-        // find editor window the Code::Blocks way
-        // find the cbStyledTextCtrl wxScintilla "SCIwindow" to this EditorBase
-        cbEditor* ed = 0;
-        EditorBase* eb = event.GetEditor();
-        if ( eb && eb->IsBuiltinEditor() )
-        {
-            ed = static_cast<cbEditor*>(eb);
-            thisEditor = ed->GetControl();
-        }
-        LOGIT(_T("this Editor is %p"), thisEditor);
-        //------------------------------------------------------------------
-        // This code never executed because ed->GetControl no longer exists
-        // See OnWindowDestroyEvent() which gets the window as an event.object
-        //------------------------------------------------------------------
-        if(thisEditor) {
-            pVike->Detach(thisEditor);
-            LOGIT(_T("OnEditorClose %s %p"), thisEditor->GetLabel().c_str(), thisEditor);
-        }
+    LOGIT(_T("OnEditorSplit"));
+    cbStyledTextCtrl *leftEditor = nullptr;
+    cbStyledTextCtrl *rightEditor = nullptr;
+    cbEditor *ed = nullptr;
+    EditorBase *eb = event.GetEditor();
+    if(eb && eb->IsBuiltinEditor()){
+        ed = static_cast<cbEditor*>(eb);
+        leftEditor = ed->GetLeftSplitViewControl();
+        // Re-attach left
+        pVike->Attach(leftEditor, ed);
+        rightEditor = ed->GetRightSplitViewControl();
+        // Attach right
+        pVike->Attach(rightEditor, ed);
+    }else{
+        LOGIT(_T("Not builtin editor"));
+        return;
     }
+    LOGIT(_T("left is %p, right is %p"), leftEditor, rightEditor);
     event.Skip();
-}//OnEditorClose
-
-void VikePlugin::OnWindowCreateEvent(wxEvent& event)
-{
-    LOGIT(_T("Enter OnWindowCreateEvent"));
-    if ( m_bBound )
-    {
-        wxWindow* pWindow = (wxWindow*)(event.GetEventObject());
-        cbEditor* ed = 0;
-        cbStyledTextCtrl* p_cbStyledTextCtrl = 0;
-        cbStyledTextCtrl* pLeftSplitWin = 0;
-        cbStyledTextCtrl* pRightSplitWin = 0;
-        ed  = Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor();
-
-        if (ed)
-        {
-            p_cbStyledTextCtrl = ed->GetControl();
-            pLeftSplitWin = ed->GetLeftSplitViewControl();
-            pRightSplitWin = ed->GetRightSplitViewControl();
-            //Has this window been split?
-            //**This is a temporary hack until some cbEvents are defined**
-            if ( pWindow && (pRightSplitWin == 0) )
-            {
-                if (pWindow->GetParent() == ed)
-                {
-                    LOGIT( _T("OnWindowCreateEvent Attaching:%p"), pWindow );
-                    AttachEditor(pWindow);
-                }
-            }
-        }
-    }//if m_bBound...
-
-
-    event.Skip();
-}//OnWindowCreateEvent
-
-void VikePlugin::OnWindowDestroyEvent(wxEvent& event)
-{
-    //NB: event.GetGetEventObject() is a SCIwindow*, not and EditorBase*
-
-    // wxEVT_DESTROY entry
-    // This routine simply clears the memorized Editor pointers
-    // that dont get cleared by OnEditorClose, which doesnt get
-    // entered for split windows. CodeBlocks doesnt yet have events
-    // when opening/closing split windows.
-    if (!m_bBound){ event.Skip(); return;}
-
-    wxWindow* thisWindow = (wxWindow*)(event.GetEventObject());
-    //-Detach(pWindow); causes crash
-    if ( (thisWindow))
-    {
-        // deleteing the EvtHandler here will crash CB
-        // detach before removing the ed ptr
-        DetachEditor(thisWindow, /*DeleteEvtHander*/false);
-        LOGIT( _T("OnWindowDestroyEvent Removed %p"), thisWindow);
-    }
-    event.Skip();
-}//OnWindowClose
-
-void VikePlugin::AttachEditor(wxWindow* pWindow)
-{
-    LOGIT(_T("Enter AttachEditor"));
-    if (IsAttached())
-    {
-        wxWindow* thisEditor = pWindow->FindWindowByName(_T("SCIwindow"),pWindow);
-
-        //skip editors that we already have
-        if ( thisEditor)
-        {
-            LOGIT(_T("Attach in AttachEditor"));
-            //Rebind keys to newly opened windows
-            pVike->Attach(thisEditor);
-            LOGIT(_T("cbKB:AttachEditor %s %p"), thisEditor->GetLabel().c_str(), thisEditor);
-        }
-    }
 }
 
-void VikePlugin::DetachEditor(wxWindow* pWindow, bool deleteEvtHandler)
+void VikePlugin::OnEditorUnsplit(CodeBlocksEvent& event)
 {
-    if (IsAttached())
-     {
+    LOGIT(_T("OnEditorUnsplit"));
+    cbStyledTextCtrl *leftEditor = nullptr;
+    cbStyledTextCtrl *rightEditor = nullptr;
+    cbEditor *ed = nullptr;
+    EditorBase *eb = event.GetEditor();
+    if(eb && eb->IsBuiltinEditor()){
+        ed = static_cast<cbEditor*>(eb);
+        /* Attach left window again.
+           As the right window is destroied, just ignore it */
+        leftEditor = ed->GetLeftSplitViewControl();
+        pVike->Attach(leftEditor, ed);
+        //pVike->DetachBrother(leftEditor);
+    }else{
+        LOGIT(_T("Not builtin editor"));
+        return;
+    }
+    LOGIT(_T("left is %p, right is %p"), leftEditor, rightEditor);
+    event.Skip();
+}
 
-         wxWindow* thisWindow = pWindow;
+#if not defined EVT_EDITOR_SPLIT || not defined EVT_EDITOR_UNSPLIT
+    void VikePlugin::OnWindowCreate(wxWindowCreateEvent &event)
+    {
+        wxWindow *destroied = event.GetWindow();
+        wxWindow *controller = destroied->FindWindowByName(_T("SCIwindow"), destroied);
+        cbEditor *editor = Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor();
+        if(editor && controller){
+            cbStyledTextCtrl *left = editor->GetLeftSplitViewControl();
+            cbStyledTextCtrl *right = editor->GetLeftSplitViewControl();
+            /* Going to be splitted */
+            if(left != nullptr && left == right && left != controller){
+                editor->GetSizer()->Clear();
 
-         // Cannot use GetBuiltinActiveEditor() because the active Editor is NOT the
-         // one being closed!!
-         // wxWindow* thisEditor
-         //  = Manager::Get()->GetEditorManager()->GetBuiltinActiveEditor()->GetControl();
+                /* restore left caret */
+                ConfigManager* mgr = Manager::Get()->GetConfigManager(_T("editor"));
+                int caretStyle = mgr->ReadInt(_T("/caret/style"), wxSCI_CARETSTYLE_LINE);
+                left->SetCaretStyle(caretStyle);
+                pVike->Detach(left);
 
-         //find the cbStyledTextCtrl wxScintilla window
-         wxWindow* thisEditor = thisWindow->FindWindowByName(_T("SCIwindow"), thisWindow);
+                m_UnattachedPair.AddPair(left, (cbStyledTextCtrl *)controller, editor);
+            }
+            LOGIT(_T("OnWindowCreate left %p, right %p, this is %p"), left, right, controller);
+        }
+        event.Skip();
+    }
+#endif // not
 
-        if ( thisEditor)
-         {
-            pVike->Detach(thisEditor, deleteEvtHandler);
-            LOGIT(_T("cbKB:DetachEditor %s %p"), thisEditor->GetLabel().c_str(), thisEditor);
-         }//if
-     }
+void VikePlugin::OnWindowDestroy(wxWindowDestroyEvent& event)
+{
+    wxWindow *destroied = event.GetWindow();
+    cbStyledTextCtrl *controller = nullptr;
+    if(destroied->GetName().Cmp(_T("SCIwindow")) == 0){
+        controller = (cbStyledTextCtrl *)destroied;
+    }
 
-}//DetachEditor
+    if(controller){
+        #if not defined EVT_EDITOR_SPLIT || not defined EVT_EDITOR_UNSPLIT
+            UnattachedPair::Pair *found = m_UnattachedPair.FindPair(controller);
+            if(found){
+                cbEditor *editor = found->m_pEditor;
+                cbStyledTextCtrl *curLeft = editor->GetLeftSplitViewControl();
+                cbStyledTextCtrl *curRight = editor->GetRightSplitViewControl();
+                LOGIT(_T("curLeft is %p, this is %p"), curLeft, controller);
 
+                /* Unsplit and destroy this window, re-attach the brother */
+                if(curLeft != nullptr && curLeft != controller){
+                    cbStyledTextCtrl *brother = found->m_pLeft == controller ? found->m_pRight : found->m_pLeft;
+                    pVike->Attach(brother, editor);
+                }
 
+                /* Any way the splitted window doesn't exist. current editor controller
+                   should has been already attached. */
+                m_UnattachedPair.DeletePair(found);
+            }
+        #endif
+        /* Detach */
+        LOGIT(_T("Detach in OnWindowDestroy %p"), destroied);
+        pVike->Detach((cbStyledTextCtrl *)controller);
+    }
+    event.Skip();
+}

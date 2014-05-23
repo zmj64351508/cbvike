@@ -4,10 +4,62 @@
 #include "cbplugin.h"
 #include "cbvike.h"
 
-#define VERSION "0.9.1 2011/12/17"
+//#define VERSION "0.2"
 
 class wxWindow;
 class wxLogWindow;
+
+#if not defined EVT_EDITOR_SPLIT || not defined EVT_EDITOR_UNSPLIT
+    class UnattachedPair
+    {
+        public:
+            struct Pair{
+                Pair(cbStyledTextCtrl *left, cbStyledTextCtrl *right, cbEditor *editor)
+                    :m_pLeft(left), m_pRight(right), m_pEditor(editor)
+                {}
+                cbStyledTextCtrl *m_pLeft;
+                cbStyledTextCtrl *m_pRight;
+                cbEditor *m_pEditor;
+            };
+
+        public:
+            void AddPair(cbStyledTextCtrl *left, cbStyledTextCtrl *right, cbEditor *editor)
+            {
+                if(FindPair(left) == nullptr){
+                    m_arr.Add(new Pair(left, right, editor));
+                }
+            }
+
+            Pair *FindPair(cbStyledTextCtrl *leftOrRight)
+            {
+                Pair *cur;
+                for(int i = 0; i < m_arr.Count(); i++){
+                    cur = (Pair*)m_arr[i];
+                    if(cur->m_pLeft == leftOrRight || cur->m_pRight == leftOrRight){
+                        return cur;
+                    }
+                }
+                return nullptr;
+            }
+
+            void DeletePair(cbStyledTextCtrl *leftOrRight)
+            {
+                Pair *result = FindPair(leftOrRight);
+                if(result){
+                    m_arr.Remove(result);
+                }
+            }
+
+            void DeletePair(Pair *toDelete)
+            {
+                m_arr.Remove(toDelete);
+            }
+
+        private:
+            wxArrayPtrVoid m_arr;
+    };
+#endif
+
 
 /*! The plugin, handling the general plugin action like attaching, releasing, etc. */
 class VikePlugin : public cbPlugin
@@ -31,50 +83,21 @@ class VikePlugin : public cbPlugin
       #endif
 
     private:
-        bool m_bBound;
         void OnEditorOpen(CodeBlocksEvent& event);
         void OnEditorClose(CodeBlocksEvent& event);
-        void AttachEditor(wxWindow* pEditor);
-        void DetachEditor(wxWindow* pWindow, bool deleteEvtHandler = true);
-        void OnToggleStatusBar(wxCommandEvent& event);
-        void OnUpdateUI(cb_unused wxUpdateUIEvent& event);
+        void OnEditorSplit(CodeBlocksEvent& event);
+        void OnEditorUnsplit(CodeBlocksEvent& event);
         void OnAppStartupDone(CodeBlocksEvent& event);
-        void OnAppStartShutdown(CodeBlocksEvent& event);
+        void OnWindowDestroy(wxWindowDestroyEvent& event);
 
-        void OnWindowCreateEvent(wxEvent& event);
-        void OnWindowDestroyEvent(wxEvent& event);
-
-        void delAccer(wxMenuBar* menuBar,wxString l1_menu,wxString l2_menu)
-        {
-            int pos = menuBar->FindMenu(l1_menu);
-            if (pos != wxNOT_FOUND)
-            {
-                wxMenu* fm = menuBar->GetMenu(pos);
-                int id = fm->FindItem(l2_menu);
-                wxMenuItem* mn = fm->FindItem(id);
-                if(mn != NULL) mn->SetItemLabel(mn->GetItemLabelText());
-            }
-        }
-
-        void delAccer(wxMenuBar* menuBar,wxString l1_menu,wxString l2_menu,wxString l3_menu)
-        {
-            int pos = menuBar->FindMenu(l1_menu);
-            if (pos != wxNOT_FOUND)
-            {
-                wxMenu* fm = menuBar->GetMenu(pos);
-                int id = fm->FindItem(l2_menu);
-                wxMenuItem* mn = fm->FindItem(id);
-                if (mn != NULL && (fm = mn->GetSubMenu()))
-                {
-                    id = fm->FindItem(l3_menu);
-                    mn = fm->FindItem(id);
-                    if(mn != NULL) mn->SetItemLabel(mn->GetItemLabelText());
-                }
-            }
-        }
-
+        bool m_bBound;
         wxWindow*       pcbWindow;
         cbVike *pVike;
+
+        #if not defined EVT_EDITOR_SPLIT || not defined EVT_EDITOR_UNSPLIT
+            void OnWindowCreate(wxWindowCreateEvent &event);
+            UnattachedPair m_UnattachedPair;
+        #endif
 };//class cbVike
 
 #endif // __CBVIKE_H__

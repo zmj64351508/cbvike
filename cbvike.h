@@ -33,6 +33,7 @@ enum VikeStatusBarField{
 extern const int idVikeViewStatusBar;
 
 class VikeWin;
+class VikeEvtBinder;
 
 /*! Vike status bar */
 class VikeStatusBar: public wxStatusBar{
@@ -60,12 +61,15 @@ class VikeStatusBar: public wxStatusBar{
 };
 
 /*! Mainly handles the way to attach to the editor */
-class cbVike: public wxObject
+class cbVike//: public wxObject
 {
     public:
-        static wxArrayString usableWindows;
-
         cbVike() {}
+
+        virtual ~cbVike()
+        {
+            DetachAll();
+        }
 
         /* All the event handler */
         void OnChar(VikeWin *vike, wxKeyEvent &event);
@@ -73,18 +77,14 @@ class cbVike: public wxObject
         void OnKeyDown(VikeWin *vike, wxKeyEvent &event);
 
         /* Attaches this class to the given window. */
-        void Attach(wxWindow *p);
-
-        virtual ~cbVike()
-        {
-            if(m_pStatusBar){
-                DestoryStatusBar();
-            }
-            DetachAll();
-        }
+        void Attach(cbStyledTextCtrl *controller, cbEditor *editor);
 
         /* Detach a given window */
-        void Detach(wxWindow *p, bool deleteEvtHandler = true);
+        void Detach(cbStyledTextCtrl *controller, bool deleteEvtHandler = true);
+        void Detach(cbEditor *editor);
+
+        /* Detach the brother of a given window */
+        void DetachBrother(cbStyledTextCtrl *controller);
 
         /* Detaches this event handler from all the window it's attached to */
         void DetachAll();
@@ -95,36 +95,30 @@ class cbVike: public wxObject
         /* Get the the windows attached array */
         wxArrayPtrVoid *GetHandlersArr(){ return &m_arrHandlers; }
 
-        /* returns True if window actually exists */
-        wxWindow* winExists(wxWindow*);
-        wxWindow* FindWindowRecursively(const wxWindow* parent, const wxWindow* handle);
-
         /* Returns TRUE if the given window is attached to this keybinder. */
-        bool IsAttachedTo(wxWindow *p) const{ return FindHandlerIdxFor(p) != wxNOT_FOUND; }
+        bool IsAttachedTo(cbStyledTextCtrl *p) const{ return FindHandlerIdxFor(p) != wxNOT_FOUND; }
 
         /* Returns the index of the handler for the given window. */
-        int FindHandlerIdxFor(wxWindow *p) const;
+        int FindHandlerIdxFor(cbStyledTextCtrl *controller) const;
 
-        /* Create the status bar */
-        void CreateStatusBar();
+        /* Return the handler binder for the given window */
+        wxArrayPtrVoid *FindHandlerFor(cbEditor *editor) const;
+        VikeEvtBinder *FindHandlerFor(cbStyledTextCtrl *controller)
+        {
+            int index = FindHandlerIdxFor(controller);
+            if(index != wxNOT_FOUND){
+                return (VikeEvtBinder *)m_arrHandlers[index];
+            }
+            return nullptr;
+        }
 
-        /* Destory the status bar */
-        void DestoryStatusBar();
-
-        /* Show the status bar */
-        void ShowStatusBar();
-
-        /* Hide the status bar */
-        void HideStatusBar();
-
-        /* Get the status bar */
-        VikeStatusBar *GetStatusBar(){ return m_pStatusBar; };
+        VikeEvtBinder *FindBrother(cbStyledTextCtrl *controller);
 
     protected:
         wxArrayPtrVoid m_arrHandlers;
 
     private:
-        VikeStatusBar *m_pStatusBar;
+        void ReAttach(cbStyledTextCtrl *controller, cbEditor *editor);
         DECLARE_CLASS(cbVike)
 };//cbVike
 
@@ -132,20 +126,23 @@ class cbVike: public wxObject
 class VikeEvtBinder : public wxEvtHandler
 {
     public:
-        VikeEvtBinder(cbVike *vike, wxWindow *tg);
+        VikeEvtBinder(cbVike *vike, cbStyledTextCtrl* controller, cbEditor *editor);
 
         virtual ~VikeEvtBinder();
 
         /* Returns TRUE if this event handler is attached to the given window. */
-        bool IsAttachedTo(wxWindow *p) { return p == m_pTarget; }
+        bool IsAttachedTo(cbStyledTextCtrl* p) { return p == m_pTarget; }
+        bool IsAttachedTo(cbEditor *p) {return p == m_pEditor; }
+
+        /* Re-attach to current the window */
+        void ReAttach(cbStyledTextCtrl *controller, cbEditor *editor);
 
         /* Returns the cbVike which is called-back by this event handler. */
         cbVike *GetBinder() const      { return m_pVike; }
 
-        /* Returns the window which this event handler is filtering. */
-        wxWindow *GetTargetWnd() const { return m_pTarget; }
-
-        wxWindow* SetWndInvalid(wxWindow* pnewWnd=0) { m_pTarget = pnewWnd; return m_pTarget; }
+        VikeWin *GetVikeWin() const    { return m_pVikeWin; }
+        cbEditor *GetEditor() const    { return m_pEditor; }
+        cbStyledTextCtrl *GetController() const{ return m_pTarget; }
 
     protected:
         //! The event handler for wxKeyEvents.
@@ -154,9 +151,10 @@ class VikeEvtBinder : public wxEvtHandler
         void OnKeyDown(wxKeyEvent &event);
 
     private:
-        cbVike *m_pVike;        // the plugin
-        wxWindow *m_pTarget;    // the windows bind to the plugin
-        VikeWin *m_pVikeWin;    // store state for each window
+        cbVike *m_pVike;              // the plugin
+        cbStyledTextCtrl* m_pTarget;  // the windows bind to the plugin
+        cbEditor *m_pEditor;          // the second windows for split window edit
+        VikeWin *m_pVikeWin;          // store state for each window
 
         DECLARE_CLASS(VikeEvtBinder)
         DECLARE_EVENT_TABLE()
@@ -206,19 +204,21 @@ class VikeHighlight{
 /*! Every window has an instance of VikeWin which store the state for each window */
 class VikeWin{
     public:
-        VikeWin(wxWindow *target, VikeStatusBar *sb);
-        ~VikeWin()
-        {
-            delete m_pBuiltinStatusBar;
-            delete m_pSizer;
-        }
+        /* Only called with attach */
+        VikeWin(cbStyledTextCtrl *target, cbEditor *editor, VikeStatusBar *bar);
+
+        /* Only called with detach where the window is destroied */
+        ~VikeWin();
+
+        /* Get embedded status bar */
+        VikeStatusBar *GetStatusBar() const { return m_pBuiltinStatusBar; }
+
+        /* Layout status bar */
+        void LayoutStatusBar(cbStyledTextCtrl *controller, cbEditor *editor);
 
         /* The event handler that do something related to each vike window */
         bool OnChar(wxKeyEvent &event);
         bool OnKeyDown(wxKeyEvent &event);
-
-        /* set caret when startup */
-        void SetStartCaret(wxScintilla* editor) const;
 
         /* Update caret by current mode */
         void UpdateCaret(wxScintilla* editor);
@@ -269,16 +269,13 @@ class VikeWin{
 
         // the executing function
         ViFunc *func;
-        // current input character
-        char Char;
 
     private:
         VikeMode m_iMode;
         VikeState m_iState;
 
-        VikeStatusBar *m_pStatusBar;
+        /* some wxWindow */
         VikeStatusBar *m_pBuiltinStatusBar;
-        wxBoxSizer *m_pSizer;
 
         VikeSearchCmd m_searchCmd;
         VikeGeneralCmd m_generalCmd;
@@ -287,7 +284,6 @@ class VikeWin{
         wxArrayInt m_arrKey;
 
         int m_iDupNumber;
-        int m_iModifier;
         int m_iCaretPos;
 };
 
