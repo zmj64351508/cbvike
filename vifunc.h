@@ -65,6 +65,9 @@ class ViFunc
            and < 0 when fail */
         int SelectBracket(int bracket, wxScintilla* editor);
 
+        /* Find next character match position on current line, return >= 0 is success */
+        int GotoCharCurrentLine(wxChar toFind, wxScintilla *editor, bool lookForward);
+
         /* Here are all the general functions for different keys */
         //insert mode
         void i_esc(VikeWin* vike, wxScintilla* editor);
@@ -147,6 +150,11 @@ class ViFunc
         void n_f_any(VikeWin* vike, int keyCode, wxScintilla* editor);
         void n_F(VikeWin* vike, wxScintilla* editor);
         void n_F_any(VikeWin* vike, int keyCode, wxScintilla* editor);
+        void n_t(VikeWin* vike, wxScintilla* editor);
+        void n_t_any(VikeWin* vike, int keyCode, wxScintilla* editor);
+        void n_T(VikeWin* vike, wxScintilla* editor);
+        void n_T_any(VikeWin* vike, int keyCode, wxScintilla* editor);
+
         void n_n(VikeWin* vike, wxScintilla* editor);
         void n_n_end(VikeWin* vike, wxScintilla* editor);
         void n_N(VikeWin* vike, wxScintilla* editor);
@@ -160,6 +168,7 @@ class ViFunc
 
         /* copy */
         void n_y(VikeWin* vike, wxScintilla* editor);
+        void n_Y(VikeWin* vike, wxScintilla* editor);
         void n_ydollar_end(VikeWin *vike, wxScintilla *editor);
         void n_yw(VikeWin* vike, wxScintilla* editor);
         void n_yy(VikeWin* vike, wxScintilla* editor);

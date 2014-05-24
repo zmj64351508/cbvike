@@ -93,8 +93,12 @@ bool ViFunc::NormalMode(VikeWin *vike, int keyCode, int m_iModifier, wxScintilla
         n_r_any(vike, keyCode, editor); return skip;
     case VIKE_FIND_FORWARD:
         n_f_any(vike, keyCode, editor); return skip;
-    case VIKE_FIND_BACKWORD:
+    case VIKE_FIND_BACKWARD:
         n_F_any(vike, keyCode, editor); return skip;
+    case VIKE_TILL_FORWARD:
+        n_t_any(vike, keyCode, editor); return skip;
+    case VIKE_TILL_BACKWARD:
+        n_T_any(vike, keyCode, editor); return skip;
     case VIKE_CHANGE_IN:
         n_ci_some(vike, keyCode, editor); return skip;
     default:
@@ -172,6 +176,10 @@ bool ViFunc::NormalMode(VikeWin *vike, int keyCode, int m_iModifier, wxScintilla
         n_P(vike, editor); break;
     case 'r':
         n_r(vike, editor); break;
+    case 't':
+        n_t(vike, editor); break;
+    case 'T':
+        n_T(vike, editor); break;
     case 'u':
         n_u(vike, editor); break;
     // w dw cw yw
@@ -184,6 +192,8 @@ bool ViFunc::NormalMode(VikeWin *vike, int keyCode, int m_iModifier, wxScintilla
     // y yy
     case 'y':
         n_y(vike, editor); break;
+    case 'Y':
+        n_Y(vike, editor); break;
     default:
         vike->Finish(editor);
         break;
@@ -673,6 +683,10 @@ void ViFunc::n_y(VikeWin *vike, wxScintilla* editor)
         vike->SetState(VIKE_END);
     }
 }
+void ViFunc::n_Y(VikeWin *vike, wxScintilla* editor)
+{
+    SINGLE_COMMAND(vike, editor, n_yy);
+}
 void ViFunc::n_ydollar_end(VikeWin *vike, wxScintilla *editor)
 {
     int num = vike->GetDupNumber();
@@ -938,7 +952,7 @@ void ViFunc::n_ci(VikeWin *vike, wxScintilla* editor)
 
 static bool IsBracketStart(wxChar c)
 {
-    if(c == '(' || c == '{' || c == '[' || c == '<'){
+    if(c == '(' || c == '{' || c == '[' || c == '<' || c == '\'' || c == '"'){
         return true;
     }else{
         return false;
@@ -947,7 +961,7 @@ static bool IsBracketStart(wxChar c)
 
 static bool IsBracketEnd(wxChar c)
 {
-    if(c == ')' || c == '}' || c == ']' || c == '>'){
+    if(c == ')' || c == '}' || c == ']' || c == '>' || c == '\'' || c == '"'){
         return true;
     }else{
         return false;
@@ -976,6 +990,11 @@ static wxChar BracketPair(wxChar c)
         pair = '['; break;
     case '>':
         pair = '<'; break;
+    /* same with start and end */
+    case '\'':
+        pair = '\''; break;
+    case '"':
+        pair = '"'; break;
     default:
         pair = -1;
         break;
@@ -1093,6 +1112,39 @@ void ViFunc::n_r_any(VikeWin *vike, int keyCode, wxScintilla* editor)
     delete replace;
     vike->Finish(editor);
 }
+int ViFunc::GotoCharCurrentLine(wxChar toFind, wxScintilla *editor, bool lookForward)
+{
+    wxString tf(toFind);
+    int findPos = -1;
+    int lineEnd = editor->GetLineEndPosition(editor->GetCurrentLine());
+    int lineStart = editor->PositionFromLine(editor->GetCurrentLine());
+    int originPos = editor->GetCurrentPos();
+
+    if(lookForward){
+        editor->CharRight();
+        editor->SearchAnchor();
+        findPos = editor->SearchNext(wxSCI_FIND_MATCHCASE, tf);
+        if(findPos > lineEnd){
+            findPos = -1;
+        }
+    }else{
+        editor->CharLeft();
+        editor->SearchAnchor();
+        findPos = editor->SearchPrev(wxSCI_FIND_MATCHCASE, tf);
+        if(findPos < lineStart){
+            findPos = -1;
+        }
+    }
+
+    /* Ensure we go to the proper position */
+    if(findPos >= 0){
+        editor->GotoPos(findPos);
+    }else{
+        editor->GotoPos(originPos);
+    }
+
+    return findPos;
+}
 void ViFunc::n_f(VikeWin *vike, wxScintilla* editor)
 {
     switch(vike->GetState()){
@@ -1107,27 +1159,14 @@ void ViFunc::n_f(VikeWin *vike, wxScintilla* editor)
 void ViFunc::n_f_any(VikeWin *vike, int keyCode, wxScintilla* editor)
 {
     LOGIT(_T("f_any key %c\n"), keyCode);
-    wxString toFind((wxChar)keyCode);
-
-    int curPos = editor->GetCurrentPos() + 1;
-    int endPos = editor->GetLineEndPosition(editor->GetCurrentLine());
-    int lengthFound, findPos = -1;
-    /* no need to find */
-    if(curPos >= endPos){
-        goto out;
-    }
-    findPos = editor->FindText(curPos, endPos, toFind, wxSCI_FIND_MATCHCASE, &lengthFound);
-    if(findPos >= 0){
-        editor->GotoPos(findPos);
-    }
-out:
+    GotoCharCurrentLine(keyCode, editor, true/*forward*/);
     vike->Finish(editor);
 }
 void ViFunc::n_F(VikeWin *vike, wxScintilla* editor)
 {
     switch(vike->GetState()){
     case VIKE_START:
-        vike->SetState(VIKE_FIND_BACKWORD);
+        vike->SetState(VIKE_FIND_BACKWARD);
         break;
     default:
         vike->SetState(VIKE_END);
@@ -1137,21 +1176,46 @@ void ViFunc::n_F(VikeWin *vike, wxScintilla* editor)
 void ViFunc::n_F_any(VikeWin *vike, int keyCode, wxScintilla* editor)
 {
     LOGIT(_T("F_any key %c\n"), keyCode);
-    wxString toFind((wxChar)keyCode);
-
-    int curPos = editor->GetCurrentPos();
-    int startPos = editor->PositionFromLine(editor->GetCurrentLine());
-    /* find the previous one */
-    int lengthFound, findPos = -1;
-    while(1){
-        startPos = editor->FindText(startPos, curPos, *toFind, wxSCI_FIND_MATCHCASE, &lengthFound);
-        if(startPos < 0){
-            break;
-        }
-        findPos = startPos++;
+    GotoCharCurrentLine(keyCode, editor, false/*backward*/);
+    vike->Finish(editor);
+}
+void ViFunc::n_t(VikeWin *vike, wxScintilla* editor)
+{
+    switch(vike->GetState()){
+    case VIKE_START:
+        vike->SetState(VIKE_TILL_FORWARD);
+        break;
+    default:
+        vike->SetState(VIKE_END);
+        break;
     }
-    if(findPos >= 0){
-        editor->GotoPos(findPos);
+}
+void ViFunc::n_t_any(VikeWin *vike, int keyCode, wxScintilla* editor)
+{
+    LOGIT(_T("t_any key %c\n"), keyCode);
+    int pos = GotoCharCurrentLine(keyCode, editor, true/*forward*/);
+    if(pos > 0){
+        editor->CharLeft();
+    }
+    vike->Finish(editor);
+}
+void ViFunc::n_T(VikeWin *vike, wxScintilla* editor)
+{
+    switch(vike->GetState()){
+    case VIKE_START:
+        vike->SetState(VIKE_TILL_BACKWARD);
+        break;
+    default:
+        vike->SetState(VIKE_END);
+        break;
+    }
+}
+void ViFunc::n_T_any(VikeWin *vike, int keyCode, wxScintilla* editor)
+{
+    LOGIT(_T("T_any key %c\n"), keyCode);
+    int pos = GotoCharCurrentLine(keyCode, editor, false/*forward*/);
+    if(pos > 0){
+        editor->CharRight();
     }
     vike->Finish(editor);
 }

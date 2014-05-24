@@ -22,6 +22,8 @@ Movement
     $            -- line end
     f<character> -- find next character
     F<character> -- find previous character
+    t<character> -- till next character
+    T<character> -- till back character
     n            -- next match case
     N            -- previous match case
 
@@ -52,6 +54,7 @@ Cut and paste
     (num)yw      -- yank (num) word(s)
     (num)yy      -- yank (num) line(s)
     (num)y$      -- yank to line end
+    (num)Y       -- the same as yy
     (num)dw      -- delete (num) word(s)
     (num)dd      -- delete (num) line(s)
     (num)d$      -- delete to line end
@@ -61,7 +64,7 @@ Cut and paste
 
 Bracket related
 
-    ci<bracket>  -- change in bracket -- such as ci(, ci), ci{, ci}, ci<, ci>, ci[, ci]
+    ci<bracket>  -- change in bracket -- such as ci(, ci), ci{, ci}, ci<, ci>, ci[, ci], ci", ci'
 
 Commands
     

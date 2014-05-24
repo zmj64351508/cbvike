@@ -15,7 +15,9 @@ enum VikeState {
     VIKE_COMMAND,       // :
     VIKE_REPLACE,       // r
     VIKE_FIND_FORWARD,  // f
-    VIKE_FIND_BACKWORD, // F
+    VIKE_FIND_BACKWARD, // F
+    VIKE_TILL_FORWARD,  // t
+    VIKE_TILL_BACKWARD,  // t
     VIKE_CHANGE,        // c
     VIKE_CHANGE_IN,     // ci
     VIKE_DELETE,        // d
