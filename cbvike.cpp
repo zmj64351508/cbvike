@@ -17,6 +17,7 @@
 #include <wx/event.h>
 
 #include "cbvike.h"
+#include "vifunc.h"
 #include "debugging.h"
 
 IMPLEMENT_CLASS(cbVike, wxObject)
@@ -280,9 +281,8 @@ VikeWin::VikeWin(cbStyledTextCtrl* target, cbEditor *editor, VikeStatusBar *bar)
 {
     LOGIT(_T("new VikeWin created"));
     //init some params
-    m_iState = VIKE_START;
+    PushState(VIKE_START);
     m_iCaretPos = 0;
-    m_iDupNumber = 0;
     func = ViFunc::Instance();
 
     wxWindow *parent = target->GetParent();
@@ -294,8 +294,8 @@ VikeWin::VikeWin(cbStyledTextCtrl* target, cbEditor *editor, VikeStatusBar *bar)
     LOGIT(_T("we have resize the window for status bar"));
 
     /* the last step to change mode */
-    ChangeMode(NORMAL);
-    UpdateCaret(target);
+    ChangeMode(NORMAL, target);
+    //UpdateCaret(target);
 }
 
 void VikeWin::LayoutStatusBar(cbStyledTextCtrl *controller, cbEditor* editor)
@@ -321,18 +321,27 @@ VikeWin::~VikeWin()
 
 void VikeWin::GeneralHandler(int keyCode, bool skip)
 {
+    int state = GetState();
+
+    if(state == VIKE_INVALID){
+        ResetState();
+        return;
+    }
+
+    /* Clear status on VIKE_END */
+    if(state == VIKE_END){
+        ClearKeyStatus();
+        ResetState();
+    }
+
+    /* Not skip, update key status and status bar */
     if(!skip){
-        if(m_iState == VIKE_END){
+        if(state == VIKE_SEARCH || state == VIKE_COMMAND){
             ClearKeyStatus();
-            SetState(VIKE_START);
-        }else if(m_iState == VIKE_SEARCH || m_iState == VIKE_COMMAND){
-            ClearKeyStatus();
-        }else{
+        }else if(state != VIKE_END){
             AppendKeyStatus(keyCode);
         }
         UpdateStatusBar();
-    }else if(m_iState == VIKE_END){
-        SetState(VIKE_START);
     }
 }
 
@@ -361,14 +370,15 @@ void VikeWin::UpdateCaret(wxScintilla *editor)
 
 void VikeWin::Finish(wxScintilla *editor)
 {
-    m_iDupNumber = 0;
-    m_iState = VIKE_END;
+    ClearDupNumber();
+    SetState(VIKE_END);
     m_iCaretPos = editor->GetCurrentPos();
 }
 
-void VikeWin::ChangeMode(VikeMode new_mode)
+void VikeWin::ChangeMode(VikeMode new_mode, wxScintilla *editor)
 {
     m_iMode = new_mode;
+    UpdateCaret(editor);
     UpdateStatusBar();
 }
 
@@ -376,14 +386,82 @@ int VikeWin::GetUndoPos()                    { return m_iCaretPos; }
 int VikeWin::GetMode() const                 { return m_iMode; }
 void VikeWin::AppendKeyStatus(int key_code)  { m_arrKey.Add(key_code); }
 void VikeWin::ClearKeyStatus()               { m_arrKey.Clear(); }
-void VikeWin::SetState(VikeState new_state)  { m_iState = new_state; }
-int VikeWin::GetState()                      { return m_iState; }
-void VikeWin::ShiftAddDupNumber(int num)     { m_iDupNumber = m_iDupNumber * 10 + num; }
-bool VikeWin::IsDup()                        { return m_iDupNumber != 0; }
-int VikeWin::GetDupNumber()                  { return m_iDupNumber == 0 ? 1 : m_iDupNumber; }
+
 VikeSearchCmd &VikeWin::GetSearchCmd()       { return m_searchCmd; }
 VikeGeneralCmd &VikeWin::GetGeneralCmd()     { return m_generalCmd; }
 VikeHighlight &VikeWin::GetHighlight()       { return m_highlight; }
+
+void VikeWin::SetState(VikeStateEnum newState)
+{
+    int count = m_state.Count();
+    assert(count > 0);
+    m_state[count - 1]->state = newState;
+}
+
+void VikeWin::PushState(VikeStateEnum newState)
+{
+    m_state.push_back(new VikeState(newState));
+}
+
+void VikeWin::PopState()
+{
+    if(m_state.Count() > 1){
+        delete m_state.Last();
+        m_state.pop_back();
+    }
+}
+
+int VikeWin::GetState()
+{
+    return m_state.Last()->state;
+}
+
+int VikeWin::GetStateCount()
+{
+    return m_state.Count();
+}
+
+void VikeWin::ResetState()
+{
+    while(m_state.Count() > 1){
+        PopState();
+    }
+    SetState(VIKE_START);
+    ClearDupNumber();
+}
+
+/* Shift the duplicate number and add current num to it */
+void VikeWin::ShiftAddDupNumber(int num)
+{
+    VikeState *state = m_state.Last();
+    state->dupNum = state->dupNum * 10 + num;
+}
+
+/* whether the duplicate number is typed */
+bool VikeWin::IsDup()
+{
+    VikeState *state;
+    for(int i = 0; i < m_state.Count(); i++){
+        VikeState *state = m_state.Last();
+        if(state->dupNum != 0){
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Get the duplicate number */
+int VikeWin::GetDupNumber()
+{
+    VikeState *state = m_state.Last();
+    return state->dupNum == 0 ? 1 : state->dupNum;
+}
+
+void VikeWin::ClearDupNumber()
+{
+    VikeState *state = m_state.Last();
+    state->dupNum = 0;
+}
 
 void VikeWin::UpdateStatusBar()
 {
@@ -393,10 +471,11 @@ void VikeWin::UpdateStatusBar()
         return;
     }
 
-    if(m_iMode == NORMAL && m_iState == VIKE_SEARCH){
+    int state = GetState();
+    if(m_iMode == NORMAL && state == VIKE_SEARCH){
         activeBar->SetStatusText(m_searchCmd.GetCommandWithPrefix(), STATUS_COMMAND);
         activeBar->SetStatusText(_T(""), STATUS_KEY);
-    }else if(m_iMode == NORMAL && m_iState == VIKE_COMMAND){
+    }else if(m_iMode == NORMAL && state == VIKE_COMMAND){
         activeBar->SetStatusText(m_generalCmd.GetCommandWithPrefix(), STATUS_COMMAND);
         activeBar->SetStatusText(_T(""), STATUS_KEY);
     }else{

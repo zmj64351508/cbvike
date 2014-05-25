@@ -14,6 +14,7 @@ Movement
     h, j, k, l
     w            -- goto next word
     b            -- goto previous word
+    e            -- goto end of the word
     gg           -- goto start of file
     <num>G       -- goto line(num)
     G            -- goto end of file

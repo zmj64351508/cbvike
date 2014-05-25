@@ -2,28 +2,43 @@
 #define __VIKE_H__
 
 #include "debugging.h"
-#include "vifunc.h"
 #include "cbstyledtextctrl.h"
+#include "vicmd.h"
 
 #define BIND_NONE   0
 #define BIND_EVENT  1
 
 enum VikeMode{ INSERT, NORMAL, VISUAL };
-enum VikeState {
-    VIKE_START,
-    VIKE_SEARCH,        // /
-    VIKE_COMMAND,       // :
-    VIKE_REPLACE,       // r
-    VIKE_FIND_FORWARD,  // f
-    VIKE_FIND_BACKWARD, // F
-    VIKE_TILL_FORWARD,  // t
-    VIKE_TILL_BACKWARD,  // t
-    VIKE_CHANGE,        // c
-    VIKE_CHANGE_IN,     // ci
-    VIKE_DELETE,        // d
-    VIKE_YANK,          // y
-    VIKE_EXTRA,         // g
-    VIKE_END,
+enum VikeStateEnum {
+    /* ==== Operator commands ========= */
+            VIKE_OPERATOR_START,
+            VIKE_CHANGE,        // c
+            VIKE_DELETE,        // d
+            VIKE_YANK,          // y
+            VIKE_OPERATOR_END,
+    /* ================================ */
+
+    /* == Common and Motion Commands == */
+    /*   (need more than one char)      */
+            VIKE_REPLACE,       // r
+            VIKE_FIND_FORWARD,  // f
+            VIKE_FIND_BACKWARD, // F
+            VIKE_TILL_FORWARD,  // t
+            VIKE_TILL_BACKWARD, // t
+            VIKE_CHANGE_IN,     // ci
+            VIKE_GO,            // g
+    /* ================================ */
+
+    /* ==== Extra Commands ============ */
+            VIKE_SEARCH,        // / (may treated like motion commads)
+            VIKE_COMMAND,       // :
+    /* ================================ */
+
+    /* ==== Useful states ============= */
+            VIKE_START,
+            VIKE_END,
+            VIKE_INVALID,
+    /* ================================ */
 };
 
 enum VikeStatusBarField{
@@ -34,6 +49,7 @@ enum VikeStatusBarField{
 
 extern const int idVikeViewStatusBar;
 
+class ViFunc;
 class VikeWin;
 class VikeEvtBinder;
 
@@ -203,6 +219,18 @@ class VikeHighlight{
         wxColour m_colour;
 };
 
+/* Vike Running state */
+struct VikeState{
+    VikeState(VikeStateEnum newState, int newDupNum = 0)
+        :state(newState), dupNum(newDupNum)
+    {}
+
+    VikeStateEnum state;
+    int dupNum;
+};
+
+WX_DEFINE_ARRAY_PTR(struct VikeState *, VikeStateStack);
+
 /*! Every window has an instance of VikeWin which store the state for each window */
 class VikeWin{
     public:
@@ -232,7 +260,7 @@ class VikeWin{
         int GetUndoPos();
 
         /* Change and Get current VIM mode like NORMAL, VISUAL, INSERT, etc */
-        void ChangeMode(VikeMode new_mode);
+        void ChangeMode(VikeMode new_mode, wxScintilla *editor);
         int GetMode() const;
 
         /* Append current pressed key to the key buffer for showing in the bar*/
@@ -245,17 +273,25 @@ class VikeWin{
         void UpdateStatusBar();
 
         /* Get and Set the state in NORMAL mode */
-        void SetState(VikeState new_state);
+        void SetState(VikeStateEnum newState);
+        void PushState(VikeStateEnum newState);
+        void PopState();
         int GetState();
+        void ResetState();
+
+        /* State count means how many duplicate number area appears
+           eg. 2d4w -- count = 2
+               2dw  -- count = 1  */
+        int GetStateCount();
 
         /* Shift the duplicate number and add current num to it */
         void ShiftAddDupNumber(int num);
-
         /* whether the duplicate number is typed */
         bool IsDup();
-
         /* Get the duplicate number */
         int GetDupNumber();
+        /* Clear duplicate number */
+        void ClearDupNumber();
 
         /* Get search command start with '/' */
         VikeSearchCmd &GetSearchCmd();
@@ -276,7 +312,7 @@ class VikeWin{
         void GeneralHandler(int keyCode, bool skip);
 
         VikeMode m_iMode;
-        VikeState m_iState;
+        VikeStateStack m_state;
 
         /* some wxWindow */
         VikeStatusBar *m_pBuiltinStatusBar;
@@ -287,8 +323,9 @@ class VikeWin{
 
         wxArrayInt m_arrKey;
 
-        int m_iDupNumber;
         int m_iCaretPos;
 };
+
+
 
 #endif //__VIKE_H__
