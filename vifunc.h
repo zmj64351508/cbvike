@@ -18,14 +18,19 @@
 #define GET_KEYCODE(code) (code & 0xff)
 #define BOOKMARK_MARKER        2
 
-#define MOTION_LINE (1ul << 0)
-#define MOTION_CHAR (0)
+
+#define MOTION_LINE (1ul << 0) // motion for line like j k
+#define MOTION_CHAR (0)        // motion for char like h l
+#define MOTION_FORWARD (1ul << 1) // motion to forward like w
+#define MOTION_BACKWARD (0)     // motion to backward like b
+#define MOTION_INCLUDE_END (1ul << 2) // do command include motion end position like e
 
 
 /*! ViFunc has only one global instance called by VikeWin */
 class ViFunc
 {
     typedef int (ViFunc::*EditCommandType)(VikeWin *vike, int startPos, int endPos, int flag, wxScintilla *editor);
+    typedef void (ViFunc::*MotionCommandType)(VikeWin *vike, int keyCode, int dupIndex, wxScintilla *editor);
     public:
         static ViFunc* Instance(){
             return &gViFunc;
@@ -68,7 +73,7 @@ class ViFunc
 
         /* the real handler for normal commands */
         int DoOperatorCommand(VikeWin *vike, int curState, int startPos, int endPos, int flag, wxScintilla *editor);
-        void DoMotionCommand(VikeWin *vike, int dupNum, int flag, wxScintilla *editor, void (ViFunc::*motion)(VikeWin* , wxScintilla *) );
+        void DoMotionCommand(VikeWin *vike, int dupNum, unsigned int flag, wxScintilla *editor, MotionCommandType motion, int keyCode = -1);
 
         /* Get duplicate number, maxLevel indicates the max position the commands can exist.
            eg. 12d2w -- in this command the maxLevel of 'w' is 2 while which of d is 1
@@ -114,11 +119,11 @@ class ViFunc
         void n_k(VikeWin* vike, wxScintilla* editor);
         void n_l(VikeWin* vike, wxScintilla* editor);
         void n_circumflex_end(VikeWin* vike, wxScintilla* editor);
-        void n_h_end(VikeWin* vike, wxScintilla* editor);
-        void n_j_end(VikeWin* vike, wxScintilla* editor);
-        void n_k_end(VikeWin* vike, wxScintilla* editor);
-        void n_l_end(VikeWin* vike, wxScintilla* editor);
-        void n_dollar_end(VikeWin* vike, wxScintilla* editor);
+        void n_h_end(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
+        void n_j_end(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
+        void n_k_end(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
+        void n_l_end(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
+        void n_dollar_end(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
 
         /* goto */
         void n_G(VikeWin* vike, wxScintilla* editor);
@@ -128,21 +133,22 @@ class ViFunc
 
         /* next and previous word */
         void n_b(VikeWin* vike, wxScintilla* editor);
-        void n_b_end(VikeWin* vike, wxScintilla* editor);
+        void n_b_end(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
         void n_w(VikeWin* vike, wxScintilla* editor);
-        void n_w_end(VikeWin *vike, wxScintilla* editor);
+        void n_w_end(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor);
         void n_e(VikeWin* vike, wxScintilla* editor);
-        void n_e_end(VikeWin *vike, wxScintilla* editor);
+        void n_e_end(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor);
 
         /* find */
         void n_f(VikeWin* vike, wxScintilla* editor);
-        void n_f_any(VikeWin* vike, int keyCode, wxScintilla* editor);
         void n_F(VikeWin* vike, wxScintilla* editor);
-        void n_F_any(VikeWin* vike, int keyCode, wxScintilla* editor);
         void n_t(VikeWin* vike, wxScintilla* editor);
-        void n_t_any(VikeWin* vike, int keyCode, wxScintilla* editor);
         void n_T(VikeWin* vike, wxScintilla* editor);
-        void n_T_any(VikeWin* vike, int keyCode, wxScintilla* editor);
+        void n_find(VikeWin *vike, wxScintilla *editor, VikeStateEnum state, int keyCode);
+        void n_f_any(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
+        void n_F_any(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
+        void n_t_any(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
+        void n_T_any(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
 
         /* next and previous */
         void n_n(VikeWin* vike, wxScintilla* editor);

@@ -411,7 +411,7 @@ void VikeWin::PopState()
     }
 }
 
-int VikeWin::GetState()
+VikeStateEnum VikeWin::GetState()
 {
     return m_state.Last()->state;
 }

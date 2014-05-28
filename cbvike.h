@@ -276,7 +276,7 @@ class VikeWin{
         void SetState(VikeStateEnum newState);
         void PushState(VikeStateEnum newState);
         void PopState();
-        int GetState();
+        VikeStateEnum GetState();
         void ResetState();
 
         /* State count means how many duplicate number area appears
