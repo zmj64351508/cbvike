@@ -30,7 +30,7 @@
 class ViFunc
 {
     typedef int (ViFunc::*EditCommandType)(VikeWin *vike, int startPos, int endPos, int flag, wxScintilla *editor);
-    typedef void (ViFunc::*MotionCommandType)(VikeWin *vike, int keyCode, int dupIndex, wxScintilla *editor);
+    typedef void (ViFunc::*MotionCommandType)(VikeWin *vike, int dupNum, wxScintilla *editor, int keyCode);
     public:
         static ViFunc* Instance(){
             return &gViFunc;
@@ -111,33 +111,33 @@ class ViFunc
         /****** motion comands *******/
         /* common move */
         void n_0(VikeWin* vike, wxScintilla* editor);
-        void n_0_end(VikeWin* vike, wxScintilla* editor);
         void n_circumflex(VikeWin* vike, wxScintilla* editor);
         void n_dollar(VikeWin* vike, wxScintilla* editor);
         void n_h(VikeWin* vike, wxScintilla* editor);
         void n_j(VikeWin* vike, wxScintilla* editor);
         void n_k(VikeWin* vike, wxScintilla* editor);
         void n_l(VikeWin* vike, wxScintilla* editor);
-        void n_circumflex_end(VikeWin* vike, wxScintilla* editor);
-        void n_h_end(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
-        void n_j_end(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
-        void n_k_end(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
-        void n_l_end(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
-        void n_dollar_end(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
+        void n_0_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_h_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_j_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_k_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_l_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_dollar_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_circumflex_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
 
         /* goto */
         void n_G(VikeWin* vike, wxScintilla* editor);
-        void n_G_end(VikeWin *vike, wxScintilla* editor);
         void n_g(VikeWin* vike, wxScintilla* editor);
-        void n_gg(VikeWin* vike, wxScintilla* editor);
+        void n_G_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_gg(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
 
         /* next and previous word */
         void n_b(VikeWin* vike, wxScintilla* editor);
-        void n_b_end(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
         void n_w(VikeWin* vike, wxScintilla* editor);
-        void n_w_end(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor);
         void n_e(VikeWin* vike, wxScintilla* editor);
-        void n_e_end(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor);
+        void n_b_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_w_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_e_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
 
         /* find */
         void n_f(VikeWin* vike, wxScintilla* editor);
@@ -145,16 +145,16 @@ class ViFunc
         void n_t(VikeWin* vike, wxScintilla* editor);
         void n_T(VikeWin* vike, wxScintilla* editor);
         void n_find(VikeWin *vike, wxScintilla *editor, VikeStateEnum state, int keyCode);
-        void n_f_any(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
-        void n_F_any(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
-        void n_t_any(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
-        void n_T_any(VikeWin* vike, int keyCode, int dupIndex, wxScintilla* editor);
+        void n_f_any(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_F_any(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_t_any(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_T_any(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
 
         /* next and previous */
         void n_n(VikeWin* vike, wxScintilla* editor);
-        void n_n_end(VikeWin* vike, wxScintilla* editor);
         void n_N(VikeWin* vike, wxScintilla* editor);
-        void n_N_end(VikeWin* vike, wxScintilla* editor);
+        void n_n_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_N_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
 
         /****** operator comands *******/
         void n_d(VikeWin* vike, wxScintilla* editor);
@@ -167,33 +167,33 @@ class ViFunc
         void n_I(VikeWin* vike, wxScintilla* editor);
         void n_a(VikeWin* vike, wxScintilla* editor);
         void n_A(VikeWin* vike, wxScintilla* editor);
-        void n_i_end(VikeWin* vike, wxScintilla* editor);
-        void n_I_end(VikeWin* vike, wxScintilla* editor);
-        void n_a_end(VikeWin *vike, wxScintilla* editor);
-        void n_A_end(VikeWin* vike, wxScintilla* editor);
+        void n_i_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_I_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_a_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_A_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
 
         /* delete */
         void n_D(VikeWin* vike, wxScintilla* editor);
-        void n_ddollar_end(VikeWin* vike, wxScintilla* editor);
-        void n_dd(VikeWin* vike, wxScintilla* editor);
+        void n_ddollar_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_dd(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
 
         /* change */
         void n_C(VikeWin* vike, wxScintilla* editor);
-        void n_cdollar_end(VikeWin *vike, wxScintilla* editor);
-        void n_cc(VikeWin* vike, wxScintilla* editor);
         void n_ci(VikeWin* vike, wxScintilla* editor);
         void n_ci_some(VikeWin* vike, int keyCode, wxScintilla* editor);
+        void n_cdollar_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_cc(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
 
         /* copy */
         void n_Y(VikeWin* vike, wxScintilla* editor);
-        void n_ydollar_end(VikeWin *vike, wxScintilla *editor);
-        void n_yy(VikeWin* vike, wxScintilla* editor);
+        void n_ydollar_end(VikeWin *vike, int dupNum, wxScintilla *editor, int keyCode);
+        void n_yy(VikeWin *vike, int dupNum, wxScintilla *editor, int keyCode);
 
         /* new line */
         void n_o(VikeWin* vike, wxScintilla* editor);
         void n_O(VikeWin* vike, wxScintilla* editor);
-        void n_o_end(VikeWin* vike, wxScintilla* editor);
-        void n_O_end(VikeWin* vike, wxScintilla* editor);
+        void n_o_end(VikeWin *vike, int dupNum, wxScintilla *editor, int keyCode);
+        void n_O_end(VikeWin *vike, int dupNum, wxScintilla *editor, int keyCode);
 
         /* replace */
         void n_r(VikeWin* vike, wxScintilla* editor);
@@ -202,19 +202,20 @@ class ViFunc
         /* undo and redo */
         void n_u(VikeWin* vike, wxScintilla* editor);
         void n_ctrl_r(VikeWin* vike, wxScintilla* editor);
-        void n_u_end(VikeWin* vike, wxScintilla* editor);
-        void n_ctrl_r_end(VikeWin* vike, wxScintilla* editor);
+        void n_u_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_ctrl_r_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+
         /* paste */
         void n_p(VikeWin* vike, wxScintilla* editor);
         void n_P(VikeWin* vike, wxScintilla* editor);
-        void n_p_end(VikeWin* vike, wxScintilla* editor);
-        void n_P_end(VikeWin* vike, wxScintilla* editor);
+        void n_p_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_P_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
 
         /* cut */
         void n_x(VikeWin* vike, wxScintilla* editor);
         void n_X(VikeWin* vike, wxScintilla* editor);
-        void n_x_end(VikeWin* vike, wxScintilla* editor);
-        void n_X_end(VikeWin* vike, wxScintilla* editor);
+        void n_x_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
+        void n_X_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
 
         /******* extra commands ***********/
         void n_search(VikeWin* vike, wxScintilla* editor);

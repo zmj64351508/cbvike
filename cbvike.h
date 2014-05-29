@@ -277,6 +277,14 @@ class VikeWin{
         void PushState(VikeStateEnum newState);
         void PopState();
         VikeStateEnum GetState();
+        VikeStateEnum GetLastState()
+        {
+            int count = m_state.Count();
+            if(count <= 1){
+                return VIKE_INVALID;
+            }
+            return m_state[count - 2]->state;
+        }
         void ResetState();
 
         /* State count means how many duplicate number area appears

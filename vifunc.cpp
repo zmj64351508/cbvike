@@ -270,9 +270,10 @@ void ViFunc::DoMotionCommand(VikeWin *vike, int dupNum, unsigned int flag, wxSci
     }
 
     /* Do dupicated motion */
-    for(int i = 0; i < dupNum; i++){
-        (this->*motion)(vike, keyCode, i, editor);
-    }
+    //for(int i = 0; i < dupNum; i++){
+        //(this->*motion)(vike, keyCode, i, editor);
+    //}
+    (this->*motion)(vike, dupNum, editor, keyCode);
 
     if(flag & MOTION_FORWARD){
         endPos = editor->GetCurrentPos();
@@ -519,12 +520,13 @@ do{\
     }\
 }while(0)
 
-#define SINGLE_COMMAND(vike, editor, command, level) \
+#define SINGLE_COMMAND(vike, editor, command, level, curkey) \
 do{\
     MAX_COMMAND_LEVEL_CHECK(vike, level);\
+    int dupNum = GetDupNum(vike, level);\
     switch(vike->GetState()){\
     case VIKE_START:\
-        command(vike, editor);\
+        command(vike, dupNum, editor, curkey);\
     default:\
         vike->SetState(VIKE_END);\
     }\
@@ -532,7 +534,7 @@ do{\
 /****** Motion Commands *******/
 void ViFunc::n_circumflex(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_circumflex_end, 2);
+    SINGLE_COMMAND(vike, editor, n_circumflex_end, 2, '~');
 }
 
 void ViFunc::n_find(VikeWin *vike, wxScintilla *editor, VikeStateEnum state, int keyCode)
@@ -599,7 +601,7 @@ void ViFunc::n_0(VikeWin *vike, wxScintilla* editor)
             ViFunc::n_number(vike, 0, editor);
             vike->SetState(VIKE_START);
         }else{
-            ViFunc::n_0_end(vike, editor);
+            ViFunc::n_0_end(vike, 1, editor, '0');
             vike->SetState(VIKE_END);
         }
         break;
@@ -700,12 +702,12 @@ void ViFunc::n_l(VikeWin *vike, wxScintilla* editor)
 
 void ViFunc::n_n(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_n_end, 1);
+    SINGLE_COMMAND(vike, editor, n_n_end, 1, 'n');
 }
 
 void ViFunc::n_N(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_N_end, 1);
+    SINGLE_COMMAND(vike, editor, n_N_end, 1, 'N');
 }
 
 void ViFunc::n_g(VikeWin *vike, wxScintilla* editor)
@@ -716,7 +718,7 @@ void ViFunc::n_g(VikeWin *vike, wxScintilla* editor)
         vike->SetState(VIKE_GO);
         break;
     case VIKE_GO:
-        ViFunc::n_gg(vike, editor);
+        ViFunc::n_gg(vike, 1, editor, 'g');
         vike->SetState(VIKE_END);
         break;
     default:
@@ -727,7 +729,7 @@ void ViFunc::n_g(VikeWin *vike, wxScintilla* editor)
 
 void ViFunc::n_G(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_G_end, 1);
+    SINGLE_COMMAND(vike, editor, n_G_end, 1, 'G');
 }
 
 void ViFunc::n_f(VikeWin *vike, wxScintilla* editor)
@@ -811,12 +813,12 @@ void ViFunc::n_search(VikeWin *vike, wxScintilla* editor)
 /****** Common Commands *******/
 void ViFunc::n_a(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_a_end, 1);
+    SINGLE_COMMAND(vike, editor, n_a_end, 1, 'a');
 }
 
 void ViFunc::n_A(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_A_end, 1);
+    SINGLE_COMMAND(vike, editor, n_A_end, 1, 'A');
 }
 
 void ViFunc::n_i(VikeWin *vike, wxScintilla* editor)
@@ -825,7 +827,7 @@ void ViFunc::n_i(VikeWin *vike, wxScintilla* editor)
     MAX_COMMAND_LEVEL_CHECK(vike, 1);
     switch(vike->GetState()){
     case VIKE_START:
-        n_i_end(vike, editor);
+        n_i_end(vike, 1, editor, 'i');
         vike->SetState(VIKE_END);
         break;
     case VIKE_CHANGE:
@@ -840,56 +842,63 @@ void ViFunc::n_i(VikeWin *vike, wxScintilla* editor)
 
 void ViFunc::n_I(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_I_end, 1);
+    SINGLE_COMMAND(vike, editor, n_I_end, 1, 'I');
 }
 
 void ViFunc::n_o(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_o_end, 1);
+    SINGLE_COMMAND(vike, editor, n_o_end, 1, 'o');
 }
 void ViFunc::n_O(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_O_end, 1);
+    SINGLE_COMMAND(vike, editor, n_O_end, 1, 'O');
 }
 
 void ViFunc::n_D(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_ddollar_end, 1);
+    SINGLE_COMMAND(vike, editor, n_ddollar_end, 1, 'D');
 }
 
 void ViFunc::n_Y(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_yy, 1);
+    SINGLE_COMMAND(vike, editor, n_yy, 1, 'Y');
 }
 
 void ViFunc::n_C(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_cdollar_end, 1);
+    MAX_COMMAND_LEVEL_CHECK(vike, 1);
+    switch(vike->GetState()){
+    case VIKE_START:
+        vike->SetState(VIKE_CHANGE);
+        n_dollar(vike, editor);
+    default:
+        vike->SetState(VIKE_END);
+    }
 }
 
 void ViFunc::n_x(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_x_end, 1);
+    SINGLE_COMMAND(vike, editor, n_x_end, 1, 'x');
 }
 
 void ViFunc::n_X(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_X_end, 1);
+    SINGLE_COMMAND(vike, editor, n_X_end, 1, 'X');
 }
 
 void ViFunc::n_p(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_p_end, 1);
+    SINGLE_COMMAND(vike, editor, n_p_end, 1, 'p');
 }
 
 void ViFunc::n_P(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_P_end, 1);
+    SINGLE_COMMAND(vike, editor, n_P_end, 1, 'P');
 }
 
 void ViFunc::n_u(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_u_end, 1);
+    SINGLE_COMMAND(vike, editor, n_u_end, 1, 'u');
 }
 
 void ViFunc::n_r(VikeWin *vike, wxScintilla* editor)
@@ -907,19 +916,28 @@ void ViFunc::n_r(VikeWin *vike, wxScintilla* editor)
 
 void ViFunc::n_ctrl_r(VikeWin *vike, wxScintilla* editor)
 {
-    SINGLE_COMMAND(vike, editor, n_ctrl_r_end, 1);
+    SINGLE_COMMAND(vike, editor, n_ctrl_r_end, 1, 'r');
 }
 
 /****** Operator Commands *******/
 void ViFunc::n_y(VikeWin *vike, wxScintilla* editor)
 {
-    MAX_COMMAND_LEVEL_CHECK(vike, 1);
+    MAX_COMMAND_LEVEL_CHECK(vike, 2);
+    int dupNum = GetDupNum(vike, 2);
+
+    /* case : d2d */
+    if(vike->GetStateCount() == 2 && vike->GetLastState() == VIKE_YANK){
+        n_yy(vike, dupNum, editor, 'y');
+        vike->SetState(VIKE_END);
+        return;
+    }
+
     switch(vike->GetState()){
     case VIKE_START:
         vike->SetState(VIKE_YANK);
         break;
     case VIKE_YANK:
-        ViFunc::n_yy(vike, editor);
+        ViFunc::n_yy(vike, dupNum, editor, 'y');
         vike->SetState(VIKE_END);
         break;
     default:
@@ -928,13 +946,22 @@ void ViFunc::n_y(VikeWin *vike, wxScintilla* editor)
 }
 void ViFunc::n_d(VikeWin *vike, wxScintilla* editor)
 {
-    MAX_COMMAND_LEVEL_CHECK(vike, 1);
+    MAX_COMMAND_LEVEL_CHECK(vike, 2);
+    int dupNum = GetDupNum(vike, 2);
+
+    /* case : d2d */
+    if(vike->GetStateCount() == 2 && vike->GetLastState() == VIKE_DELETE){
+        n_dd(vike, dupNum, editor, 'd');
+        vike->SetState(VIKE_END);
+        return;
+    }
+
     switch(vike->GetState()){
     case VIKE_START:
         vike->SetState(VIKE_DELETE);
         break;
     case VIKE_DELETE:
-        ViFunc::n_dd(vike, editor);
+        ViFunc::n_dd(vike, dupNum, editor, 'd');
         vike->SetState(VIKE_END);
         break;
     default:
@@ -944,13 +971,22 @@ void ViFunc::n_d(VikeWin *vike, wxScintilla* editor)
 }
 void ViFunc::n_c(VikeWin *vike, wxScintilla* editor)
 {
-    MAX_COMMAND_LEVEL_CHECK(vike, 1);
+    MAX_COMMAND_LEVEL_CHECK(vike, 2);
+    int dupNum = GetDupNum(vike, 2);
+
+    /* case : c2c */
+    if(vike->GetStateCount() == 2 && vike->GetLastState() == VIKE_CHANGE){
+        n_cc(vike, dupNum, editor, 'c');
+        vike->SetState(VIKE_END);
+        return;
+    }
+
     switch(vike->GetState()){
     case VIKE_START:
         vike->SetState(VIKE_CHANGE);
         break;
     case VIKE_CHANGE:
-        ViFunc::n_cc(vike, editor);
+        ViFunc::n_cc(vike, dupNum, editor, 'c');
         vike->SetState(VIKE_END);
         break;
     default:
@@ -966,57 +1002,63 @@ void ViFunc::n_command(VikeWin *vike, wxScintilla* editor)
 }
 
 /****** Commands Implementation *******/
-void ViFunc::n_a_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_a_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     if(editor->GetCurrentPos() != editor->GetLineEndPosition(editor->GetCurrentLine())){
         editor->CharRight();
     }
-    n_i_end(vike, editor);
+    vike->ChangeMode(INSERT, editor);
     vike->Finish(editor);
 }
-void ViFunc::n_A_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_A_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     editor->LineEnd();
-    n_i_end(vike, editor);
+    vike->ChangeMode(INSERT, editor);
     vike->Finish(editor);
 }
-void ViFunc::n_h_end(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor)
+void ViFunc::n_h_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
-    if(editor->GetCurrentPos() != editor->PositionFromLine(editor->GetCurrentLine()))
-        editor->CharLeft();
-    //vike->Finish(editor);
+    for(int i = 0; i < dupNum; i++){
+        if(editor->GetCurrentPos() != editor->PositionFromLine(editor->GetCurrentLine())){
+            editor->CharLeft();
+        }
+    }
 }
-void ViFunc::n_j_end(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor)
+void ViFunc::n_j_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
-    editor->LineDown();
-    //vike->Finish(editor);
+    for(int i = 0; i < dupNum; i++){
+        editor->LineDown();
+    }
 }
-void ViFunc::n_k_end(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor)
+void ViFunc::n_k_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
-    editor->LineUp();
-    //vike->Finish(editor);
+    for(int i = 0; i < dupNum; i++){
+        editor->LineUp();
+    }
 }
-void ViFunc::n_l_end(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor)
+void ViFunc::n_l_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
-    if(editor->GetCurrentPos() != editor->GetLineEndPosition(editor->GetCurrentLine())){
-        editor->CharRight();
+    for(int i = 0; i < dupNum; i++){
+        if(editor->GetCurrentPos() != editor->GetLineEndPosition(editor->GetCurrentLine())){
+            editor->CharRight();
+        }
     }
     //vike->Finish(editor);
 }
-void ViFunc::n_i_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_i_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     editor->BeginUndoAction();
     vike->ChangeMode(INSERT, editor);
     editor->EndUndoAction();
     vike->Finish(editor);
 }
-void ViFunc::n_I_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_I_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     editor->VCHome();
     vike->ChangeMode(INSERT, editor);
     vike->Finish(editor);
 }
-void ViFunc::n_0_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_0_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     if(vike->IsDup()) {
         vike->ShiftAddDupNumber(0);
@@ -1024,32 +1066,32 @@ void ViFunc::n_0_end(VikeWin *vike, wxScintilla* editor)
         editor->Home();
     }
 }
-void ViFunc::n_circumflex_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_circumflex_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     editor->VCHome();
     vike->Finish(editor);
 }
-void ViFunc::n_dollar_end(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor)
+void ViFunc::n_dollar_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
-    if(dupIndex >= 1){
-        editor->LineDown();
-    }
     editor->LineEnd();
-    //vike->Finish(editor);
+    for(int i = 0; i < dupNum - 1; i++){
+        editor->LineDown();
+        editor->LineEnd();
+    }
 }
-void ViFunc::n_n_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_n_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     int pos = editor->GetCurrentPos();
     editor->GotoPos(vike->GetSearchCmd().NextPos(pos));
     vike->Finish(editor);
 }
-void ViFunc::n_N_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_N_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     int pos = editor->GetCurrentPos();
     editor->GotoPos(vike->GetSearchCmd().PrevPos(pos));
     vike->Finish(editor);
 }
-void ViFunc::n_G_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_G_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     if(vike->IsDup()) {
         int num = vike->GetDupNumber();
@@ -1084,53 +1126,50 @@ void ViFunc::n_ctrl_p(VikeWin *vike, wxScintilla* editor)
 {
     vike->Finish(editor);
 }
-void ViFunc::n_o_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_o_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     editor->BeginUndoAction();
     editor->LineEnd();
     editor->NewLine();
-    n_i_end(vike, editor);
+    vike->ChangeMode(INSERT, editor);
     editor->EndUndoAction();
     vike->Finish(editor);
 }
-void ViFunc::n_O_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_O_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     editor->BeginUndoAction();
     editor->VCHome();
     editor->NewLine();
     editor->LineUp();
-    n_i_end(vike, editor);
+    vike->ChangeMode(INSERT, editor);
     editor->EndUndoAction();
     vike->Finish(editor);
 }
-void ViFunc::n_gg(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_gg(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     editor->DocumentStart();
     vike->Finish(editor);
 }
-void ViFunc::n_ydollar_end(VikeWin *vike, wxScintilla *editor)
+void ViFunc::n_ydollar_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
-    int num = vike->GetDupNumber();
     int curPos = editor->GetCurrentPos();
 
     editor->SetSelectionStart(curPos);
     int start_line = editor->GetCurrentLine();
-    int end_pos = editor->GetLineEndPosition(start_line + num - 1);
+    int end_pos = editor->GetLineEndPosition(start_line + dupNum - 1);
     editor->SetSelectionEnd(end_pos);
     editor->Copy();
     editor->SetEmptySelection(curPos);
 
     m_bLineCuted = false;
-    vike->Finish(editor);
 }
-void ViFunc::n_yy(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_yy(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
-    int num = vike->GetDupNumber();
     int curPos = editor->GetCurrentPos();
 
     int start_line = editor->GetCurrentLine();
     editor->SetSelectionStart(editor->PositionFromLine(start_line));
-    int end_pos = editor->GetLineEndPosition(start_line + num - 1);
+    int end_pos = editor->GetLineEndPosition(start_line + dupNum - 1);
     editor->SetSelectionEnd(end_pos);
     editor->Copy();
     editor->SetEmptySelection(curPos);
@@ -1138,7 +1177,7 @@ void ViFunc::n_yy(VikeWin *vike, wxScintilla* editor)
     m_bLineCuted = true;
     vike->Finish(editor);
 }
-void ViFunc::n_p_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_p_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     int line;
     int curPos;
@@ -1169,7 +1208,7 @@ void ViFunc::n_p_end(VikeWin *vike, wxScintilla* editor)
 
     vike->Finish(editor);
 }
-void ViFunc::n_P_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_P_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     int line;
     int curPos;
@@ -1214,35 +1253,38 @@ void ViFunc::n_ctrl_b(VikeWin *vike, wxScintilla* editor)
     editor->PageUp();
     vike->Finish(editor);
 }
-void ViFunc::n_b_end(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor)
+void ViFunc::n_b_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
-    editor->WordLeft();
-    //vike->Finish(editor);
-}
-void ViFunc::n_w_end(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor)
-{
-    editor->WordRight();
-    //vike->Finish(editor);
-}
-void ViFunc::n_e_end(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor)
-{
-    int curPos = editor->GetCurrentPos();
-    editor->CharRight();
-    editor->WordRightEnd();
-    /* scintilla think the end of word is the next character of the last one in the word */
-    if(curPos != editor->GetCurrentPos()){
-        editor->CharLeft();
+    for(int i = 0; i < dupNum; i++){
+        editor->WordLeft();
     }
-    //vike->Finish(editor);
 }
-void ViFunc::n_ddollar_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_w_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
+{
+    for(int i = 0; i < dupNum; i++){
+        editor->WordRight();
+    }
+}
+void ViFunc::n_e_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
+{
+    int curPos;
+    for(int i = 0; i < dupNum; i++){
+        curPos = editor->GetCurrentPos();
+        editor->CharRight();
+        editor->WordRightEnd();
+        /* scintilla think the end of word is the next character of the last one in the word */
+        if(curPos != editor->GetCurrentPos()){
+            editor->CharLeft();
+        }
+    }
+}
+void ViFunc::n_ddollar_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     editor->BeginUndoAction();
-    int num = vike->GetDupNumber();
 
     int curPos = editor->GetCurrentPos();
     int curLine = editor->GetCurrentLine();
-    int lineEnd = editor->GetLineEndPosition(curLine + num - 1);
+    int lineEnd = editor->GetLineEndPosition(curLine + dupNum - 1);
     editor->SetSelectionStart(curPos);
     editor->SetSelectionEnd(lineEnd);
     editor->Cut();
@@ -1251,30 +1293,28 @@ void ViFunc::n_ddollar_end(VikeWin *vike, wxScintilla* editor)
     m_bLineCuted = false;
     vike->Finish(editor);
 }
-void ViFunc::n_dd(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_dd(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
-    int num = vike->GetDupNumber();
-
     editor->BeginUndoAction();
     int startLine = editor->GetCurrentLine();
     int startPos = editor->PositionFromLine(startLine);
-    int endPos = editor->GetLineEndPosition(startLine + num - 1);
+    int endPos = editor->GetLineEndPosition(startLine + dupNum - 1);
     DoDelete(vike, startPos, endPos, MOTION_LINE, editor);
     editor->EndUndoAction();
 
     vike->Finish(editor);
 }
-void ViFunc::n_cdollar_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_cdollar_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
-    n_ddollar_end(vike, editor);
-    n_i_end(vike, editor);
+    n_ddollar_end(vike, dupNum, editor, keyCode);
+    vike->ChangeMode(INSERT, editor);
     vike->Finish(editor);
 }
-void ViFunc::n_cc(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_cc(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     editor->BeginUndoAction();
-    n_dd(vike, editor);
-    n_O_end(vike, editor);
+    n_dd(vike, dupNum, editor, 'c');
+    n_O_end(vike, 1, editor, 'c');
     editor->EndUndoAction();
     vike->Finish(editor);
 }
@@ -1414,7 +1454,7 @@ void ViFunc::n_ci_some(VikeWin *vike, int keyCode, wxScintilla* editor)
         if(len > 0){
             editor->DeleteBack();
         }
-        n_i_end(vike, editor);
+        vike->ChangeMode(INSERT, editor);
     }else{
         /* if not find anything return to origin position */
         editor->GotoPos(curPos);
@@ -1466,20 +1506,22 @@ int ViFunc::GotoCharCurrentLine(wxChar toFind, wxScintilla *editor, bool lookFor
 
     return findPos;
 }
-void ViFunc::n_f_any(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor)
+void ViFunc::n_f_any(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     LOGIT(_T("f_any key %c\n"), keyCode);
-    GotoCharCurrentLine(keyCode, editor, true/*forward*/);
-    //vike->Finish(editor);
+    for(int i = 0; i < dupNum; i++){
+        GotoCharCurrentLine(keyCode, editor, true/*forward*/);
+    }
 }
-void ViFunc::n_F_any(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor)
+void ViFunc::n_F_any(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     LOGIT(_T("F_any key %c\n"), keyCode);
-    GotoCharCurrentLine(keyCode, editor, false/*backward*/);
-    //vike->Finish(editor);
+    for(int i = 0; i < dupNum; i++){
+        GotoCharCurrentLine(keyCode, editor, false/*backward*/);
+    }
 }
 
-void ViFunc::n_t_any(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor)
+void ViFunc::n_t_any(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     LOGIT(_T("t_any key %c\n"), keyCode);
     int curPos = editor->GetCurrentPos();
@@ -1489,55 +1531,53 @@ void ViFunc::n_t_any(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* edit
         return;
     }
 
-    editor->CharRight();
-    int pos = GotoCharCurrentLine(keyCode, editor, true/*forward*/);
-    if(pos > 0){
-        editor->CharLeft();
-    }else{
-        editor->GotoPos(curPos);
+    for(int i = 0; i < dupNum; i++){
+        editor->CharRight();
+        int pos = GotoCharCurrentLine(keyCode, editor, true/*forward*/);
+        if(pos > 0){
+            editor->CharLeft();
+        }else{
+            editor->GotoPos(curPos);
+            break;
+        }
     }
-    //vike->Finish(editor);
 }
-void ViFunc::n_T_any(VikeWin *vike, int keyCode, int dupIndex, wxScintilla* editor)
+void ViFunc::n_T_any(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
     LOGIT(_T("T_any key %c\n"), keyCode);
     int pos = GotoCharCurrentLine(keyCode, editor, false/*forward*/);
     if(pos > 0){
         editor->CharRight();
     }
-    //vike->Finish(editor);
 }
-void ViFunc::n_u_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_u_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
-    editor->Undo();
+    for(int i = 0; i < dupNum; i++){
+        editor->Undo();
+    }
     //editor->SetCurrentPos(vike->GetUndoPos());
     vike->Finish(editor);
 }
-void ViFunc::n_sf_5(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_x_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
-    int curpos = editor->GetCurrentPos();
-    int bracepos = editor->BraceMatch(curpos);
-    if(bracepos != -1)
-    {
-        editor->SetCurrentPos(bracepos);
-        curpos < bracepos ? editor->SetSelectionStart(editor->GetSelectionEnd()) : editor->SetSelectionEnd(editor->GetSelectionStart());
+    for(int i = 0; i < dupNum; i++){
+        editor->CharRight();
+        editor->DeleteBack();
     }
     vike->Finish(editor);
 }
-void ViFunc::n_x_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_X_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
-    editor->CharRight();
-    editor->DeleteBack();
+    for(int i = 0; i < dupNum; i++){
+        editor->DeleteBack();
+    }
     vike->Finish(editor);
 }
-void ViFunc::n_X_end(VikeWin *vike, wxScintilla* editor)
+void ViFunc::n_ctrl_r_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
 {
-    editor->DeleteBack();
-    vike->Finish(editor);
-}
-void ViFunc::n_ctrl_r_end(VikeWin *vike, wxScintilla* editor)
-{
-    editor->Redo();
+    for(int i = 0; i < dupNum; i++){
+        editor->Redo();
+    }
     vike->Finish(editor);
 }
 //////////////////////////////////////////////////////////////////////
