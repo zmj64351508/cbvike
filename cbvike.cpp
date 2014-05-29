@@ -441,13 +441,14 @@ void VikeWin::ShiftAddDupNumber(int num)
 bool VikeWin::IsDup()
 {
     VikeState *state;
-    for(int i = 0; i < m_state.Count(); i++){
-        VikeState *state = m_state.Last();
-        if(state->dupNum != 0){
-            return true;
-        }
-    }
-    return false;
+    return m_state.Last()->dupNum != 0;
+//    for(int i = 0; i < m_state.Count(); i++){
+//        VikeState *state = m_state.Last();
+//        if(state->dupNum != 0){
+//            return true;
+//        }
+//    }
+//    return false;
 }
 
 /* Get the duplicate number */

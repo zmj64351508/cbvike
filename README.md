@@ -9,8 +9,8 @@ Currently build and tested on stable version 12.11, 13.12 and svn trunk
 ## Basic Function
 It can emulate the basic functions of VIM. Tested functions are as follow:
 
-
-**NOTE:** Most of the commands can start with a number which means the times of the command to execute repeatedly.
+###NOTES
+- Most of the commands can start with a number which means the times of the command to execute repeatedly.
 
 ###Motion Commands
 
@@ -21,7 +21,7 @@ It can emulate the basic functions of VIM. Tested functions are as follow:
     b            -- goto previous word
     e            -- goto end of the word
     gg           -- goto start of file
-    G       -- goto line(num)
+    <num>G       -- goto line <num>
     G            -- goto end of file
     0            -- visiable line start
     ^            -- line start
@@ -49,6 +49,7 @@ eg.
     c2j: change current line and 2 lines below
     2yfa: yank from the caret to the second occurence of 'a'
     2d3l: equal to 6yl or y6l, delete 6 characters start from caret in current line
+    d/abc: delete text to next searching result of /abc
 
 ###Other Commands
 Mode Swap
@@ -71,12 +72,12 @@ Cut and paste
 
     x            -- delete
     X            -- backspace
-    (num)cc      -- change (num) line(s)
-    (num)C       -- the same as c$
-    (num)yy      -- yank (num) line(s)
-    (num)Y       -- the same as yy
-    (num)dd      -- delete (num) line(s)
-    (num)D       -- the same as d$
+    cc           -- change (num) line(s)
+    C            -- the same as c$
+    yy           -- yank (num) line(s)
+    Y            -- the same as yy
+    dd           -- delete (num) line(s)
+    D            -- the same as d$
     p            -- paste below
     P            -- paste above
 
