@@ -81,6 +81,11 @@ Cut and paste
     p            -- paste below
     P            -- paste above
 
+Scroll
+    
+    zz           -- scroll line to centre of the screen
+    zt           -- scroll line to top of the screen
+
 Bracket related
 
     ci<bracket>  -- change in bracket -- such as ci(, ci), ci{, ci}, ci<, ci>, ci[, ci], ci", ci'

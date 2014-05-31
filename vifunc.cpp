@@ -85,6 +85,7 @@ void ViFunc::InitNormalCommand()
     m_arrCommand['X'] = &ViFunc::n_X;
     m_arrCommand['y'] = &ViFunc::n_y;
     m_arrCommand['Y'] = &ViFunc::n_Y;
+    m_arrCommand['z'] = &ViFunc::n_z;
 }
 
 bool ViFunc::InsertModeSp(VikeWin *vike, int keyCode, wxScintilla *editor)
@@ -723,6 +724,7 @@ void ViFunc::n_F(VikeWin *vike, wxScintilla* editor, int keyCode)
 void ViFunc::n_t(VikeWin *vike, wxScintilla* editor, int keyCode)
 {
     MAX_COMMAND_LEVEL_CHECK(vike, 2);
+    int dupNum;
     switch(vike->GetState()){
     case VIKE_CHANGE:
     case VIKE_DELETE:
@@ -731,6 +733,12 @@ void ViFunc::n_t(VikeWin *vike, wxScintilla* editor, int keyCode)
         break;
     case VIKE_START:
         vike->SetState(VIKE_TILL_FORWARD);
+        break;
+    case VIKE_Z:
+        MAX_COMMAND_LEVEL_CHECK(vike, 1);
+        dupNum = GetDupNum(vike, 1);
+        n_zt(vike, dupNum, editor, keyCode);
+        vike->Finish(editor);
         break;
     default:
         vike->SetState(VIKE_END);
@@ -884,6 +892,24 @@ void ViFunc::n_r(VikeWin *vike, wxScintilla* editor, int keyCode)
 void ViFunc::n_ctrl_r(VikeWin *vike, wxScintilla* editor, int keyCode)
 {
     SINGLE_COMMAND(vike, editor, n_ctrl_r_end, 1, keyCode);
+}
+
+void ViFunc::n_z(VikeWin *vike, wxScintilla *editor, int keyCode)
+{
+    MAX_COMMAND_LEVEL_CHECK(vike, 1);
+    int dupNum = GetDupNum(vike, 1);
+    switch(vike->GetState()){
+    case VIKE_START:
+        vike->SetState(VIKE_Z);
+        break;
+    case VIKE_Z:
+        n_zz(vike, dupNum, editor, keyCode);
+        vike->Finish(editor);
+        break;
+    default:
+        vike->Finish(editor);
+        vike->SetState(VIKE_INVALID);
+    }
 }
 
 /****** Operator Commands *******/
@@ -1129,6 +1155,24 @@ void ViFunc::n_yy(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)
     editor->SetEmptySelection(curPos);
 
     m_bLineCuted = true;
+    vike->Finish(editor);
+}
+void ViFunc::n_zz(VikeWin *vike, int dupNum, wxScintilla *editor, int keyCode)
+{
+    if(vike->IsDup() && dupNum > 0){
+        editor->GotoLine(dupNum - 1);
+    }
+    editor->VerticalCentreCaret();
+    vike->Finish(editor);
+}
+void ViFunc::n_zt(VikeWin *vike, int dupNum, wxScintilla *editor, int keyCode)
+{
+    if(vike->IsDup() && dupNum > 0){
+        editor->GotoLine(dupNum - 1);
+    }
+    int curLine = editor->GetCurrentLine();
+    int firstLine = editor->GetFirstVisibleLine();
+    editor->LineScroll(0, curLine - firstLine);
     vike->Finish(editor);
 }
 void ViFunc::n_p_end(VikeWin *vike, int dupNum, wxScintilla* editor, int keyCode)

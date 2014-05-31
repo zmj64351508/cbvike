@@ -3,7 +3,7 @@
     <SdkVersion major="1" minor="10" release="0" />
     <Plugin name="cbVike">
         <Value title="cbVike" />
-        <Value version="0.2.0" />
+        <Value version="0.2.1" />
         <Value description="Code::Blocks VIM Like Plugin
                Enjoy editing like VIM" />
         <Value author="Arthur Zhou" />

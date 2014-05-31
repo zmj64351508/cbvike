@@ -225,6 +225,10 @@ class ViFunc
         void n_x_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
         void n_X_end(VikeWin* vike, int dupNum, wxScintilla* editor, int keyCode);
 
+        void n_z(VikeWin* vike, wxScintilla* editor, int keyCode);
+        void n_zz(VikeWin *vike, int dupNum, wxScintilla *editor, int keyCode);
+        void n_zt(VikeWin *vike, int dupNum, wxScintilla *editor, int keyCode);
+
         /******* extra commands ***********/
         void n_search(VikeWin* vike, wxScintilla* editor, int keyCode);
         void n_command(VikeWin* vike, wxScintilla* editor, int keyCode);

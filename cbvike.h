@@ -27,6 +27,7 @@ enum VikeStateEnum {
             VIKE_TILL_BACKWARD, // t
             VIKE_CHANGE_IN,     // ci
             VIKE_GO,            // g
+            VIKE_Z,             // z
     /* ================================ */
 
     /* ==== Extra Commands ============ */
