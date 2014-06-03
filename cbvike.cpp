@@ -1,13 +1,12 @@
 // For compilers that support precompilation, includes "wx/wx.h".
+#include "sdk.h"
 #include "wx/wxprec.h"
 
 #ifndef WX_PRECOMP
 #include "wx/wx.h"
 #endif
 
-#if defined(CB_PRECOMP)
-#include "sdk.h"
-#else
+#if not defined(CB_PRECOMP)
 #include "sdk_common.h"
 #include "sdk_events.h"
 #include "logmanager.h"

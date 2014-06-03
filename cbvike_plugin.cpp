@@ -118,9 +118,9 @@ void VikePlugin::OnEditorOpen(CodeBlocksEvent& event)
     LOGIT(_T("Enter OnEditorOpen"));
     if (IsAttached())
     {
-        if(!m_bBound){
-            OnAppStartupDone(event);
-        }
+//        if(!m_bBound){
+//            OnAppStartupDone(event);
+//        }
         cbEditor* editor = nullptr;
         EditorBase* eb = event.GetEditor();
         /* Only work with builtin editor */

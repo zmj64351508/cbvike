@@ -1,6 +1,6 @@
 # build files
 build
-vike.layout
+*.layout
 
 # other
 *.bmarks
