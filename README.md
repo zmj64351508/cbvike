@@ -99,8 +99,7 @@ Bracket related
 ## Known Issues
 
 * When the key shortcuts are defined in the `keybinder` plugin like `Ctrl-r`, it won't take effect. So if you want to used such shortcuts, ensure it is not defined in `keybinder`. Maybe I'll provide a script to undefine such shortcuts in `keybinder` later. 
-* It can't handle split window edit. If you enter split edit mode, the plugin won't take any effect until the editor returns to un-splitted. 
-* **NOTE:** I've commit a patch to Code::Blocks and as soon as the patch takes effect, this plugin will provide full support to split edit. Just rebuild it with the new SDK.
+* Split and unsplit is fully supported after Code::Blocks svn trunk [9835](http://sourceforge.net/p/codeblocks/code/9835/) and is not supported before it.
 
 ## Installation
 
