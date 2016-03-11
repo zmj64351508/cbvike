@@ -119,6 +119,8 @@ class VikeCmdFunc{
         /* All the commands */
         /* no hightlight */
         static int nohl(int argc, wxString *argv[], VikeWin *vike, wxScintilla *editor);
+        static int cmd_write(int argc, wxString *argv[], VikeWin *vike, wxScintilla *editor);
+        static int cmd_quit(int argc, wxString *argv[], VikeWin *vike, wxScintilla *editor);
 };
 
 #endif // __VICMD_H__
