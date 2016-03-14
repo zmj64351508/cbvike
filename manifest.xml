@@ -3,11 +3,11 @@
     <SdkVersion major="1" minor="10" release="0" />
     <Plugin name="cbVike">
         <Value title="cbVike" />
-        <Value version="0.2.1" />
+        <Value version="0.2.3" />
         <Value description="Code::Blocks VIM Like Plugin
                Enjoy editing like VIM" />
         <Value author="Arthur Zhou, ICEANT" />
-        <Value authorEmail="Arthur.zmj@gmail.com" />
+        <Value authorEmail="Arthur.zmj@gmail.com, pizer.chen@gmail.com" />
         <Value authorWebsite="" />
         <Value thanksTo="Thanks to...
             Pecan Heber's keybinder plugin

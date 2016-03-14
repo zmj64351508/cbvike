@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<results>
+    <error file="D:\usr\local\src\wxMSW-2.8.12\include\wx\platform.h" line="481" id="preprocessorErrorDirective" severity="error" msg='#error &quot;__WIN32__ should be defined for Win32 and Win64, Win16 is not supported&quot;' />
+    <error id="missingIncludeSystem" severity="style" msg="Cppcheck cannot find all the include files. Cppcheck can check the code without the include files found. But the results will probably be more accurate if all the include files are found. Please check your project&apos;s include directories and add all of them as include directories for Cppcheck. To see what files Cppcheck cannot find use --check-config." />
+</results>

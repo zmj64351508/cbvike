@@ -205,8 +205,9 @@ VikeCmdFunc::VikeCmdFunc()
     m_cmdMap[_T("w")] = &cmd_write;
     m_cmdMap[_T("q")] = &cmd_quit;
     m_cmdMap[_T("wq")] = [](int argc, wxString** argv, VikeWin* vike, wxScintilla* editor) ->int {
-        Manager::Get()->GetEditorManager()->SaveActive();
-        Manager::Get()->GetEditorManager()->CloseActive();
+        EditorManager * editorMgr = Manager::Get()->GetEditorManager();
+        editorMgr->SaveActive();
+        editorMgr->CloseActive();
     };
 }
 
