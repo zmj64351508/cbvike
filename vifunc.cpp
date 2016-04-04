@@ -1447,7 +1447,7 @@ void ViFunc::n_r_any(VikeWin *vike, int keyCode, wxScintilla* editor)
     wxString replace((wxChar)keyCode);
     editor->ReplaceSelection(replace);
     editor->CharLeft();
-    delete replace;
+    //delete replace;
     vike->Finish(editor);
 }
 int ViFunc::GotoCharCurrentLine(wxChar toFind, wxScintilla *editor, bool lookForward)
