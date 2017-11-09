@@ -233,6 +233,9 @@ class ViFunc
         void n_search(VikeWin* vike, wxScintilla* editor, int keyCode);
         void n_command(VikeWin* vike, wxScintilla* editor, int keyCode);
 
+        // Join the line
+        void n_J(VikeWin* vike, wxScintilla* editor, int keyCode);
+
         /****** unused(developing) *******/
         void n_ctrl_f(VikeWin* vike, wxScintilla* editor);
         void n_ctrl_b(VikeWin* vike, wxScintilla* editor);

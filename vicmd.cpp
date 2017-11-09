@@ -191,6 +191,7 @@ void VikeGeneralCmd::ParseCommand(VikeWin *vike, wxScintilla *editor)
     if(handler){
         handler(1, argv, vike, editor);
     }
+
 }
 /***************** VikeGeneralCommand end *****************/
 
@@ -201,6 +202,13 @@ VikeCmdFunc VikeCmdFunc::m_pInstance;
 VikeCmdFunc::VikeCmdFunc()
 {
     m_cmdMap[_T("nohl")] = &nohl;
+    m_cmdMap[_T("w")] = &cmd_write;
+    m_cmdMap[_T("q")] = &cmd_quit;
+    m_cmdMap[_T("wq")] = [](int argc, wxString** argv, VikeWin* vike, wxScintilla* editor) ->int {
+        EditorManager * editorMgr = Manager::Get()->GetEditorManager();
+        editorMgr->SaveActive();
+        editorMgr->CloseActive();
+    };
 }
 
 VikeCmdFunc::VikeCmdFunc(const VikeCmdFunc&)
@@ -216,5 +224,15 @@ VikeCmdHandler VikeCmdFunc::GetHandler(const wxString &cmd)
 int VikeCmdFunc::nohl(int argc, wxString *argv[], VikeWin *vike, wxScintilla *editor)
 {
     vike->GetHighlight().Hide(editor);
+}
+
+int VikeCmdFunc::cmd_write(int argc, wxString *argv[], VikeWin *vike, wxScintilla *editor)
+{
+    Manager::Get()->GetEditorManager()->SaveActive();
+}
+
+int VikeCmdFunc::cmd_quit(int argc, wxString *argv[], VikeWin *vike, wxScintilla *editor)
+{
+    Manager::Get()->GetEditorManager()->CloseActive();
 }
 /***************** VikeCmdFunc end *****************/

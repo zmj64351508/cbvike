@@ -68,6 +68,7 @@ void ViFunc::InitNormalCommand()
     m_arrCommand['I'] = &ViFunc::n_I;
     m_arrCommand['h'] = &ViFunc::n_h;
     m_arrCommand['j'] = &ViFunc::n_j;
+    m_arrCommand['J'] = &ViFunc::n_J;
     m_arrCommand['k'] = &ViFunc::n_k;
     m_arrCommand['l'] = &ViFunc::n_l;
     m_arrCommand['n'] = &ViFunc::n_n;
@@ -600,6 +601,18 @@ void ViFunc::n_j(VikeWin *vike, wxScintilla* editor, int keyCode)
     MAX_COMMAND_LEVEL_CHECK(vike, 2);
     int dupNum = GetDupNum(vike, 2);
     DoMotionCommand(vike, dupNum, MOTION_LINE|MOTION_FORWARD|MOTION_INCLUDE_END, editor, &ViFunc::n_j_end, keyCode);
+    vike->Finish(editor);
+}
+
+//Join the line
+void ViFunc::n_J(VikeWin *vike, wxScintilla* editor, int keyCode)
+{
+    // goto the end of the line
+    MAX_COMMAND_LEVEL_CHECK(vike, 2);
+    int dupNum = GetDupNum(vike, 2);
+    DoMotionCommand(vike, dupNum, MOTION_CHAR|MOTION_FORWARD, editor, &ViFunc::n_dollar_end, keyCode);
+    // delete the \r character
+    SINGLE_COMMAND(vike, editor, n_x_end, 1, keyCode);
     vike->Finish(editor);
 }
 
